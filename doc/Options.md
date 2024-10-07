@@ -8,8 +8,8 @@
   overrides former ones.
 - The option "-C `jconffile`" will expand the content of the jconf file at the
   position.
-- In jconf file, relative path arguments are treated as relative to the *jconf
-  file itself*, not the current working directory.
+- In jconf file, relative path arguments are treated as relative to the _jconf
+  file itself_, not the current working directory.
 
 ### Option groups
 
@@ -21,19 +21,19 @@ Options are categorized into one of the following groups:
 - `SR`
 - `GLOBAL`
 
-`APP` group is application-side option group.  The options in the `APP` group can be specified for the command-line application `"julius"`, but not available at your application integrating `libjulius` and `libsent`.  They can be specified at any point of the option sequence.
+`APP` group is application-side option group. The options in the `APP` group can be specified for the command-line application `"julius"`, but not available at your application integrating `libjulius` and `libsent`. They can be specified at any point of the option sequence.
 
 `LM`, `AM` and `SR` are option groups for language model, acoustic model and search algorithm, respectively.
 
 `GLOBAL` group contains misc. options that are independent from models and algorithms. They contains options concerning audio front-end and utility back-end.
 
-You do not need to care about the groups when you just use Julius with single recognition instance (1 AM, 1 LM).  If you are going to set up Julius to perform multi-instance decoding with multiple models, you should care about the groups and section declaration as described in the following section.
+You do not need to care about the groups when you just use Julius with single recognition instance (1 AM, 1 LM). If you are going to set up Julius to perform multi-instance decoding with multiple models, you should care about the groups and section declaration as described in the following section.
 
 ## Instance declaration options for multi decoding
 
-Julius supports multi-instance decoding with multiple models.  The multi-instance decoding runs each models simultaneously for an audio input within a single thread and output multiple results at once.
+Julius supports multi-instance decoding with multiple models. The multi-instance decoding runs each models simultaneously for an audio input within a single thread and output multiple results at once.
 
-To perform multi-model decoding, you should define several model sets, and also define search instances using the options. To specify multiple models sets and instances, a special option `-AM`, `-LM` and `-SR` can be used to switch the mode.  Below is an example of jconf file for multi-model decoding:
+To perform multi-model decoding, you should define several model sets, and also define search instances using the options. To specify multiple models sets and instances, a special option `-AM`, `-LM` and `-SR` can be used to switch the mode. Below is an example of jconf file for multi-model decoding:
 
 ```text
 # Example of two ASR module, each has its original AM/LM
@@ -157,7 +157,7 @@ Print the callback names at each call for debug. (rev.4.0)
 
 ### -charconv from to
 
-Print with character set conversion.  `from` is the source character
+Print with character set conversion. `from` is the source character
 set used in the language model, and `to` is the target character set
 you want to get.
 
@@ -256,7 +256,7 @@ On some OS, instead of `mic`, you can explicitly specify available audio API (al
 (With -input rawfile|mfcfile|outprob) perform recognition on
 all files listed in the file. The file should contain input
 file per line. Engine will end when all of the files are
-processed.  See also `-outfile` for per-input result output.
+processed. See also `-outfile` for per-input result output.
 
 ### -48
 
@@ -329,19 +329,19 @@ small.
 
 ### -fvad mode
 
-Enable WebRTC VAD (libfvad-based VAD) mode.  Setting `mode` to 0, 1, 2 or 3 enables WebRTC based VAD.  `mode` is an integer value from -1 to 3, specify -1 to disable, 0 for weakest noise rejection (accepts all speech, but often wrongly accept noises), 3 for most aggressive noise rejection.  Default value is -1 (disabled)
+Enable WebRTC VAD (libfvad-based VAD) mode. Setting `mode` to 0, 1, 2 or 3 enables WebRTC based VAD. `mode` is an integer value from -1 to 3, specify -1 to disable, 0 for weakest noise rejection (accepts all speech, but often wrongly accept noises), 3 for most aggressive noise rejection. Default value is -1 (disabled)
 
 ### -fvad_param nFrame threshold
 
-Set WebRTC VAD's detailed parameters.  `nFrame` is the length of smoothing frame. `threshold` is the threshold to detect speech trigger [0.0-1.0]. Default values are 5 and 0.5, respectively.
+Set WebRTC VAD's detailed parameters. `nFrame` is the length of smoothing frame. `threshold` is the threshold to detect speech trigger [0.0-1.0]. Default values are 5 and 0.5, respectively.
 
 ### -agc, -noagc
 
-Enable / disable supplemental auto gain control (AGC). This feature scales up captured audio automatically by looking at the input level and results of WebRTC VAD.  This is soft AGC, applying no change to the hardware volume of the capture device.  Requires WebRTC VAD to be enabled together, so use with `-fvad 2` or `-fvad 3`.  This feature is highly experimental and not tested well.  Default is disabled. (Added 2019/4/20)
+Enable / disable supplemental auto gain control (AGC). This feature scales up captured audio automatically by looking at the input level and results of WebRTC VAD. This is soft AGC, applying no change to the hardware volume of the capture device. Requires WebRTC VAD to be enabled together, so use with `-fvad 2` or `-fvad 3`. This feature is highly experimental and not tested well. Default is disabled. (Added 2019/4/20)
 
 ### -agc_param i1 p1 p2 p3 p4 p5 p6
 
-Set AGC parameters.  `i1` is a level threshold value to detect signal overflow, `p1` is the maximum allowed scale factor, `p2` is the maximum allowed scale, relative to first-utterance scale.  `p3` is target level magnifying factor for first-utterance scaling, `p4` is the magnifying rate when moving the scale up, `p5` is the magnifying rate when moving scale down, `p6` is the special scaling down factor applied when detecting signal overflow.
+Set AGC parameters. `i1` is a level threshold value to detect signal overflow, `p1` is the maximum allowed scale factor, `p2` is the maximum allowed scale, relative to first-utterance scale. `p3` is target level magnifying factor for first-utterance scaling, `p4` is the magnifying rate when moving the scale up, `p5` is the magnifying rate when moving scale down, `p6` is the special scaling down factor applied when detecting signal overflow.
 
 ## Input rejection options (category `GLOBAL`)
 
@@ -384,7 +384,7 @@ the GMM, specifying the acoustic parameters described in AM section
 When GMM-based VAD is enabled, the voice activity score will be
 calculated at each frame as front-end processing. The value will be
 computed as
-$$ \max_{m \in M_v} p(x|m) - \max_{m \in M_n} p(x|m) $$
+$$ \max*{m \in M_v} p(x|m) - \max*{m \in M_n} p(x|m) $$
 where $M_v$ is a set of voice GMM, and $M_n$ is a set of noise GMM
 whose names should be specified by `-gmmreject`. The activity score
 will be then averaged for the last N frames, where N is specified
@@ -446,9 +446,9 @@ This option will be valid only if compiled with
 
 ### -realtime, -norealtime
 
-Explicitly switch between "stream processing" and "buffered processing".  "-realtime" sets mode to stream processing, and "-norealtime" sets mode to buffered processing.
+Explicitly switch between "stream processing" and "buffered processing". "-realtime" sets mode to stream processing, and "-norealtime" sets mode to buffered processing.
 
-Default is buffer processing for files, and stream processing for microphone and network input.  Setting "-realtime" to a file input can simulate the recognition process as if it were input from microphone.
+Default is buffer processing for files, and stream processing for microphone and network input. Setting "-realtime" to a file input can simulate the recognition process as if it were input from microphone.
 
 ### -C jconffile
 
@@ -711,7 +711,7 @@ code book at each frame. The default setting will be set
 according to the model type and engine setting. `default` will
 force accepting the default setting. Set this to `none` to
 disable pruning and perform full computation. `safe` guarantees
-the top N Gaussians to be computed.  `heuristic` and `beam` do more
+the top N Gaussians to be computed. `heuristic` and `beam` do more
 aggressive computational cost reduction, but may result in
 small loss of accuracy model (default: `safe` (standard), `beam`
 (fast) for tied mixture model, `none` for non tied-mixture
@@ -950,7 +950,7 @@ control the behavior of MAP-CMN.
 Enable cepstral variance normalization. At file input, the
 variance of whole input will be calculated and then applied. At
 live microphone input, variance of the last input will be
-applied. CVN is only supported for an audio input.  When specified,
+applied. CVN is only supported for an audio input. When specified,
 the save/load of the CMN file by "-cmnload" and "-cmnsave"
 also contains variance information to give its initial generic values.
 
@@ -966,7 +966,7 @@ Config values, `WARPFREQ`, `WARPHCUTOFF` and `WARPLCUTOFF`.
 Load generic cepstral mean vector (and variance when invoked with -cvn) from file on startup. The
 file should be one saved by `-cmnsave`. Loading an generic
 cepstral mean enables Julius to better recognize the first
-utterance on a real-time input.  It is also required to specify this option when using `-cmnstatic` or `-cvnstatic`. When used together with
+utterance on a real-time input. It is also required to specify this option when using `-cmnstatic` or `-cvnstatic`. When used together with
 -cmnnoupdate, the value in the file will be used for all input.
 
 ### -cmnsave file
@@ -978,9 +978,9 @@ already exists, it will be overridden.
 ### -cmnupdate, -cmnnoupdate
 
 Control whether to update the generic cepstral mean on
-real-time input.  The update is enabled by default, the stored cepstral
+real-time input. The update is enabled by default, the stored cepstral
 mean will be updated using the last 5 seconds of last input, and the
-updated mean will be used as the initial value on the next input for MAP-CMN.  Disabling the update
+updated mean will be used as the initial value on the next input for MAP-CMN. Disabling the update
 by `-cmnnoupdate` causes Julius to always start its MAP-CMN
 at every input from the initial generic value, either 0 or the one given
 by `-cmnload`. Enabled by default.
@@ -994,12 +994,12 @@ more on the current input. (default: 100.0)
 
 ### -cmnstatic
 
-Perform static mean and variance normalization.  When specified, Julius always use the loaded mean and variance for all input and all frames.  This option works for both buffered input and stream input.  Requires the static mean and variance to be
+Perform static mean and variance normalization. When specified, Julius always use the loaded mean and variance for all input and all frames. This option works for both buffered input and stream input. Requires the static mean and variance to be
 loaded by `-cmnload`.
 
 ### -cvnstatic
 
-Perform static variance normalization only.  Like `-cmnstatic` but only variance is static and mean will be computed as normal.  Requires the static variance to be loaded by `-cmnload`.  If static mean exists in the loaded file, it will be ignored.
+Perform static variance normalization only. Like `-cmnstatic` but only variance is static and mean will be computed as normal. Requires the static variance to be loaded by `-cmnload`. If static mean exists in the loaded file, it will be ignored.
 
 ## Front-end processing options (category `-AM` / `-AM_GMM`)
 
@@ -1100,8 +1100,7 @@ pass.
 
 ### -proginterval msec
 
-Set the time interval for `-progout` in milliseconds. (default:
-300)
+Set the time interval for `-progout` in milliseconds. (default: 300)
 
 ## 2nd pass parameters options (category `SR`)
 
