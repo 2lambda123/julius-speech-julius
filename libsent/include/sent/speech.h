@@ -28,9 +28,9 @@
  */
 /*
  * Copyright (c) 1991-2013 Kawahara Lab., Kyoto University
- * Copyright (c) 2000-2005 Shikano Lab., Nara Institute of Science and Technology
- * Copyright (c) 2005-2013 Julius project team, Nagoya Institute of Technology
- * All rights reserved
+ * Copyright (c) 2000-2005 Shikano Lab., Nara Institute of Science and
+ * Technology Copyright (c) 2005-2013 Julius project team, Nagoya Institute of
+ * Technology All rights reserved
  */
 
 /* speech input limitation */
@@ -47,7 +47,7 @@
  * So you have to set large value enough.
  *
  */
-#define MAXSEQNUM     150
+#define MAXSEQNUM 150
 
 /**
  * @brief Maximum length of an input in samples
@@ -62,7 +62,7 @@
  * memory usage.
  *
  */
-#define MAXSPEECHLEN  320000
+#define MAXSPEECHLEN 320000
 
 /**
  * @brief Maximum length of input delay in seconds
@@ -76,7 +76,7 @@
  * memory usage but risk of overflow grows on slow machines
  *
  */
-#define INPUT_DELAY_SEC  8
+#define INPUT_DELAY_SEC 8
 
 /**
  * @brief Expansion period in frames for output probability cache
@@ -97,15 +97,14 @@
  */
 #define OUTPROB_CACHE_PERIOD 100
 
-
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 /// Macro to convert smpPeriod (100nsec unit) to frequency (Hz)
-#define period2freq(A)  (10000000.0 / (float)(A))
+#define period2freq(A) (10000000.0 / (float)(A))
 /// Macro to convert sampling frequency (Hz) to smpPeriod (100nsec unit)
-#define freq2period(A)  (10000000.0 / (float)(A))
+#define freq2period(A) (10000000.0 / (float)(A))
 
 /* for anlz/wrsamp.c */
 int wrsamp(int fd, SP16 *buf, int len);

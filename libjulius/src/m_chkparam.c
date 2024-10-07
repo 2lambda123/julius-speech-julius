@@ -25,9 +25,9 @@
  */
 /*
  * Copyright (c) 1991-2013 Kawahara Lab., Kyoto University
- * Copyright (c) 2000-2005 Shikano Lab., Nara Institute of Science and Technology
- * Copyright (c) 2005-2013 Julius project team, Nagoya Institute of Technology
- * All rights reserved
+ * Copyright (c) 2000-2005 Shikano Lab., Nara Institute of Science and
+ * Technology Copyright (c) 2005-2013 Julius project team, Nagoya Institute of
+ * Technology All rights reserved
  */
 
 #include <julius/julius.h>
@@ -45,14 +45,12 @@
  * </EN>
  *
  */
-boolean
-checkpath(char *filename)
-{
-    if (access(filename, R_OK) == -1) {
-        jlog("ERROR: m_chkparam: cannot access %s\n", filename);
-        return FALSE;
-    }
-    return TRUE;
+boolean checkpath(char *filename) {
+  if (access(filename, R_OK) == -1) {
+    jlog("ERROR: m_chkparam: cannot access %s\n", filename);
+    return FALSE;
+  }
+  return TRUE;
 }
 
 /**
@@ -91,300 +89,337 @@ checkpath(char *filename)
  * @callergraph
  * @ingroup jconf
  */
-boolean
-j_jconf_finalize(Jconf *jconf)
-{
-    boolean ok_p;
-    JCONF_LM *lm;
-    JCONF_AM *am;
-    JCONF_SEARCH *s, *hs;
+boolean j_jconf_finalize(Jconf *jconf) {
+  boolean ok_p;
+  JCONF_LM *lm;
+  JCONF_AM *am;
+  JCONF_SEARCH *s, *hs;
 
-    ok_p = TRUE;
+  ok_p = TRUE;
 
-    /* update and tailor configuration */
-    /* if a search config has progout_flag enabled, set it to all config */
-    hs = NULL;
-    for(s=jconf->search_root; s; s=s->next) {
-        if (s->output.progout_flag) {
-            hs = s;
-            break;
-        }
+  /* update and tailor configuration */
+  /* if a search config has progout_flag enabled, set it to all config */
+  hs = NULL;
+  for (s = jconf->search_root; s; s = s->next) {
+    if (s->output.progout_flag) {
+      hs = s;
+      break;
     }
-    if (hs != NULL) {
-        for(s=jconf->search_root; s; s=s->next) {
-            s->output.progout_flag = hs->output.progout_flag;
-            s->output.progout_interval = hs->output.progout_interval;
-        }
+  }
+  if (hs != NULL) {
+    for (s = jconf->search_root; s; s = s->next) {
+      s->output.progout_flag = hs->output.progout_flag;
+      s->output.progout_interval = hs->output.progout_interval;
     }
+  }
 
-    /* if an instance has short-pause segmentation enabled,
-       set it to global opt for parameter handling
-       (only a recognizer with this option will decide the segmentation,
-        but the segmentation should be synchronized for all the recognizer)
-    */
-    for(s=jconf->search_root; s; s=s->next) {
-        if (s->successive.enabled) {
-            jconf->decodeopt.segment = TRUE;
-            break;
-        }
+  /* if an instance has short-pause segmentation enabled,
+     set it to global opt for parameter handling
+     (only a recognizer with this option will decide the segmentation,
+      but the segmentation should be synchronized for all the recognizer)
+  */
+  for (s = jconf->search_root; s; s = s->next) {
+    if (s->successive.enabled) {
+      jconf->decodeopt.segment = TRUE;
+      break;
     }
+  }
 #ifdef GMM_VAD
-    /* if GMM VAD enabled, set it to global */
-    if (jconf->reject.gmm_filename) {
-        jconf->decodeopt.segment = TRUE;
-    }
+  /* if GMM VAD enabled, set it to global */
+  if (jconf->reject.gmm_filename) {
+    jconf->decodeopt.segment = TRUE;
+  }
 #endif
 
-    for(lm = jconf->lm_root; lm; lm = lm->next) {
-        if (lm->lmtype == LM_UNDEF) {
-            /* determine LM type from the specified LM files */
-            if (lm->ngram_filename_lr_arpa || lm->ngram_filename_rl_arpa || lm->ngram_filename) {
-                /* n-gram specified */
-                lm->lmtype = LM_PROB;
-                lm->lmvar  = LM_NGRAM;
-            }
-            if (lm->gramlist_root) {
-                /* DFA grammar specified */
-                if (lm->lmtype != LM_UNDEF) {
-                    jlog("ERROR: m_chkparam: LM conflicts: several LM of different type specified?\n");
-                    return FALSE;
-                }
-                lm->lmtype = LM_DFA;
-                lm->lmvar  = LM_DFA_GRAMMAR;
-            }
-            if (lm->dfa_filename) {
-                /* DFA grammar specified by "-dfa" */
-                if (lm->lmtype != LM_UNDEF && lm->lmvar != LM_DFA_GRAMMAR) {
-                    jlog("ERROR: m_chkparam: LM conflicts: several LM of different type specified?\n");
-                    return FALSE;
-                }
-                lm->lmtype = LM_DFA;
-                lm->lmvar  = LM_DFA_GRAMMAR;
-            }
-            if (lm->wordlist_root) {
-                /* word list specified */
-                if (lm->lmtype != LM_UNDEF) {
-                    jlog("ERROR: m_chkparam: LM conflicts: several LM of different type specified?\n");
-                    return FALSE;
-                }
-                lm->lmtype = LM_DFA;
-                lm->lmvar  = LM_DFA_WORD;
-            }
+  for (lm = jconf->lm_root; lm; lm = lm->next) {
+    if (lm->lmtype == LM_UNDEF) {
+      /* determine LM type from the specified LM files */
+      if (lm->ngram_filename_lr_arpa || lm->ngram_filename_rl_arpa ||
+          lm->ngram_filename) {
+        /* n-gram specified */
+        lm->lmtype = LM_PROB;
+        lm->lmvar = LM_NGRAM;
+      }
+      if (lm->gramlist_root) {
+        /* DFA grammar specified */
+        if (lm->lmtype != LM_UNDEF) {
+          jlog("ERROR: m_chkparam: LM conflicts: several LM of different type "
+               "specified?\n");
+          return FALSE;
         }
-        if (lm->lmtype == LM_UNDEF) { /* an LM is not specified */
-            jlog("ERROR: m_chkparam: you should specify at least one LM to run Julius!\n");
-            return FALSE;
+        lm->lmtype = LM_DFA;
+        lm->lmvar = LM_DFA_GRAMMAR;
+      }
+      if (lm->dfa_filename) {
+        /* DFA grammar specified by "-dfa" */
+        if (lm->lmtype != LM_UNDEF && lm->lmvar != LM_DFA_GRAMMAR) {
+          jlog("ERROR: m_chkparam: LM conflicts: several LM of different type "
+               "specified?\n");
+          return FALSE;
         }
-        if (lm->lmtype == LM_PROB) {
-            if (lm->dictfilename == NULL) {
-                jlog("ERROR: m_chkparam: needs dictionary file (-v dict_file)\n");
-                ok_p = FALSE;
-            }
+        lm->lmtype = LM_DFA;
+        lm->lmvar = LM_DFA_GRAMMAR;
+      }
+      if (lm->wordlist_root) {
+        /* word list specified */
+        if (lm->lmtype != LM_UNDEF) {
+          jlog("ERROR: m_chkparam: LM conflicts: several LM of different type "
+               "specified?\n");
+          return FALSE;
         }
-        /* file existence check */
-        if (lm->dictfilename != NULL)
-            if (!checkpath(lm->dictfilename)) ok_p = FALSE;
-        if (lm->ngram_filename != NULL)
-            if (!checkpath(lm->ngram_filename)) ok_p = FALSE;
-        if (lm->ngram_filename_lr_arpa != NULL)
-            if (!checkpath(lm->ngram_filename_lr_arpa)) ok_p = FALSE;
-        if (lm->ngram_filename_rl_arpa != NULL)
-            if (!checkpath(lm->ngram_filename_rl_arpa)) ok_p = FALSE;
-        if (lm->dfa_filename != NULL)
-            if (!checkpath(lm->dfa_filename)) ok_p = FALSE;
+        lm->lmtype = LM_DFA;
+        lm->lmvar = LM_DFA_WORD;
+      }
+    }
+    if (lm->lmtype == LM_UNDEF) { /* an LM is not specified */
+      jlog("ERROR: m_chkparam: you should specify at least one LM to run "
+           "Julius!\n");
+      return FALSE;
+    }
+    if (lm->lmtype == LM_PROB) {
+      if (lm->dictfilename == NULL) {
+        jlog("ERROR: m_chkparam: needs dictionary file (-v dict_file)\n");
+        ok_p = FALSE;
+      }
+    }
+    /* file existence check */
+    if (lm->dictfilename != NULL)
+      if (!checkpath(lm->dictfilename))
+        ok_p = FALSE;
+    if (lm->ngram_filename != NULL)
+      if (!checkpath(lm->ngram_filename))
+        ok_p = FALSE;
+    if (lm->ngram_filename_lr_arpa != NULL)
+      if (!checkpath(lm->ngram_filename_lr_arpa))
+        ok_p = FALSE;
+    if (lm->ngram_filename_rl_arpa != NULL)
+      if (!checkpath(lm->ngram_filename_rl_arpa))
+        ok_p = FALSE;
+    if (lm->dfa_filename != NULL)
+      if (!checkpath(lm->dfa_filename))
+        ok_p = FALSE;
+  }
+
+  for (am = jconf->am_root; am; am = am->next) {
+    /* check if needed files are specified */
+    if (am->hmmfilename == NULL) {
+      jlog("ERROR: m_chkparam: needs HMM definition file (-h hmmdef_file)\n");
+      ok_p = FALSE;
+    }
+    /* file existence check */
+    if (am->hmmfilename != NULL)
+      if (!checkpath(am->hmmfilename))
+        ok_p = FALSE;
+    if (am->mapfilename != NULL)
+      if (!checkpath(am->mapfilename))
+        ok_p = FALSE;
+    if (am->hmm_gs_filename != NULL)
+      if (!checkpath(am->hmm_gs_filename))
+        ok_p = FALSE;
+    /* cmn{save,load}_filename allows missing file (skipped if missing) */
+    if (am->frontend.ssload_filename != NULL)
+      if (!checkpath(am->frontend.ssload_filename))
+        ok_p = FALSE;
+  }
+  if (jconf->reject.gmm_filename != NULL)
+    if (!checkpath(jconf->reject.gmm_filename))
+      ok_p = FALSE;
+  if (jconf->input.inputlist_filename != NULL) {
+    if (jconf->input.speech_input != SP_RAWFILE &&
+        jconf->input.speech_input != SP_MFCFILE &&
+        jconf->input.speech_input != SP_OUTPROBFILE) {
+      jlog("WARNING: m_chkparam: not file input, \"-filelist %s\" ignored\n",
+           jconf->input.inputlist_filename);
+    } else {
+      if (!checkpath(jconf->input.inputlist_filename))
+        ok_p = FALSE;
+    }
+  }
+
+  /* set default realtime flag according to input mode */
+  if (jconf->decodeopt.force_realtime_flag) {
+    if (jconf->input.type == INPUT_VECTOR) {
+      jlog("WARNING: m_chkparam: real-time concurrent processing is not needed "
+           "on feature vector input\n");
+      jlog("WARNING: m_chkparam: real-time flag has turned off\n");
+      jconf->decodeopt.realtime_flag = FALSE;
+    } else {
+      jconf->decodeopt.realtime_flag = jconf->decodeopt.forced_realtime;
+    }
+  }
+
+  /* check for cmn */
+  for (am = jconf->am_root; am; am = am->next) {
+    if (am->analysis.map_cmn == FALSE &&
+        am->analysis.cmnload_filename == NULL) {
+      /* cmnstatic, no cmnload : error */
+      jlog("ERROR: m_chkparam: with \"-cmnstatic\", the static cepstral mean "
+           "(and variance) should be given by \"-cmnload\"\n");
+      ok_p = FALSE;
+    }
+    if (am->analysis.cmn_static_cvn_only == TRUE &&
+        am->analysis.cmnload_filename == NULL) {
+      /* cvnstatic, no cmnload : error */
+      jlog("ERROR: m_chkparam: with \"-cvnstatic\", the static cepstral "
+           "variance (and mean) should be given by \"-cmnload\"\n");
+      ok_p = FALSE;
+    }
+    if (jconf->decodeopt.realtime_flag == FALSE) {
+      if (am->analysis.map_cmn == TRUE &&
+          am->analysis.cmnload_filename != NULL) {
+        /* no cmnstatic, cmnload on buffered input : assume cmnstatic */
+        jlog("WARNING: m_chkparam: \"-cmnstatic\" was automatically enabled "
+             "because you have specified \"-cmnload\" at buffered input.  To "
+             "avoid confusion in the future release, please explicitly set "
+             "\"-cmnstatic\" for static CMN.\n");
+      }
+      if (am->analysis.map_cmn == TRUE && am->analysis.cmn_update == FALSE) {
+        /* cmnnoupdate on buffered input : no operation */
+        jlog("WARNING: m_chkparam: CMN updates will not occur on buffered "
+             "input, \"-cmnnoupdate\" is ignored\n");
+      }
+    } else {
+      if (am->analysis.map_cmn == TRUE && am->analysis.cmn_update == FALSE &&
+          am->analysis.cmnload_filename == NULL) {
+        /* cmnnoupdate without cmnload on stream input : error */
+        jlog("ERROR: m_chkparam: when \"-cmnnoupdate\", initial cepstral "
+             "normalisation data should be given by \"-cmnload\"\n");
+        ok_p = FALSE;
+      }
+    }
+  }
+
+  /* set values for search config */
+  for (s = jconf->search_root; s; s = s->next) {
+    lm = s->lmconf;
+    am = s->amconf;
+
+    /* force context dependency handling flag for word-recognition mode */
+    if (lm->lmtype == LM_DFA && lm->lmvar == LM_DFA_WORD) {
+      /* disable inter-word context dependent handling ("-no_ccd") */
+      s->ccd_handling = FALSE;
+      s->force_ccd_handling = TRUE;
+      /* force 1pass ("-1pass") */
+      s->compute_only_1pass = TRUE;
     }
 
-    for(am = jconf->am_root; am; am = am->next) {
-        /* check if needed files are specified */
-        if (am->hmmfilename == NULL) {
-            jlog("ERROR: m_chkparam: needs HMM definition file (-h hmmdef_file)\n");
-            ok_p = FALSE;
-        }
-        /* file existence check */
-        if (am->hmmfilename != NULL)
-            if (!checkpath(am->hmmfilename)) ok_p = FALSE;
-        if (am->mapfilename != NULL)
-            if (!checkpath(am->mapfilename)) ok_p = FALSE;
-        if (am->hmm_gs_filename != NULL)
-            if (!checkpath(am->hmm_gs_filename)) ok_p = FALSE;
-        /* cmn{save,load}_filename allows missing file (skipped if missing) */
-        if (am->frontend.ssload_filename != NULL)
-            if (!checkpath(am->frontend.ssload_filename)) ok_p = FALSE;
+    /* set default iwcd1 method from lm */
+    /* WARNING: THIS WILL BEHAVE WRONG IF MULTIPLE LM TYPE SPECIFIED */
+    /* RECOMMEND USING EXPLICIT OPTION */
+    if (am->iwcdmethod == IWCD_UNDEF) {
+      switch (lm->lmtype) {
+      case LM_PROB:
+        am->iwcdmethod = IWCD_NBEST;
+        break;
+      case LM_DFA:
+        am->iwcdmethod = IWCD_AVG;
+        break;
+      }
     }
-    if (jconf->reject.gmm_filename != NULL)
-        if (!checkpath(jconf->reject.gmm_filename)) ok_p = FALSE;
-    if (jconf->input.inputlist_filename != NULL) {
-        if (jconf->input.speech_input != SP_RAWFILE && jconf->input.speech_input != SP_MFCFILE && jconf->input.speech_input != SP_OUTPROBFILE) {
-            jlog("WARNING: m_chkparam: not file input, \"-filelist %s\" ignored\n", jconf->input.inputlist_filename);
-        } else {
-            if (!checkpath(jconf->input.inputlist_filename)) ok_p = FALSE;
-        }
-    }
+  }
 
-    /* set default realtime flag according to input mode */
-    if (jconf->decodeopt.force_realtime_flag) {
-        if (jconf->input.type == INPUT_VECTOR) {
-            jlog("WARNING: m_chkparam: real-time concurrent processing is not needed on feature vector input\n");
-            jlog("WARNING: m_chkparam: real-time flag has turned off\n");
-            jconf->decodeopt.realtime_flag = FALSE;
-        } else {
-            jconf->decodeopt.realtime_flag = jconf->decodeopt.forced_realtime;
-        }
-    }
-
-    /* check for cmn */
-    for(am = jconf->am_root; am; am = am->next) {
-        if (am->analysis.map_cmn == FALSE && am->analysis.cmnload_filename == NULL) {
-            /* cmnstatic, no cmnload : error */
-            jlog("ERROR: m_chkparam: with \"-cmnstatic\", the static cepstral mean (and variance) should be given by \"-cmnload\"\n");
-            ok_p = FALSE;
-        }
-        if (am->analysis.cmn_static_cvn_only == TRUE && am->analysis.cmnload_filename == NULL) {
-            /* cvnstatic, no cmnload : error */
-            jlog("ERROR: m_chkparam: with \"-cvnstatic\", the static cepstral variance (and mean) should be given by \"-cmnload\"\n");
-            ok_p = FALSE;
-        }
-        if (jconf->decodeopt.realtime_flag == FALSE) {
-            if (am->analysis.map_cmn == TRUE && am->analysis.cmnload_filename != NULL) {
-                /* no cmnstatic, cmnload on buffered input : assume cmnstatic */
-                jlog("WARNING: m_chkparam: \"-cmnstatic\" was automatically enabled because you have specified \"-cmnload\" at buffered input.  To avoid confusion in the future release, please explicitly set \"-cmnstatic\" for static CMN.\n");
-            }
-            if (am->analysis.map_cmn == TRUE && am->analysis.cmn_update == FALSE) {
-                /* cmnnoupdate on buffered input : no operation */
-                jlog("WARNING: m_chkparam: CMN updates will not occur on buffered input, \"-cmnnoupdate\" is ignored\n");
-            }
-        } else {
-            if (am->analysis.map_cmn == TRUE && am->analysis.cmn_update == FALSE && am->analysis.cmnload_filename == NULL) {
-                /* cmnnoupdate without cmnload on stream input : error */
-                jlog("ERROR: m_chkparam: when \"-cmnnoupdate\", initial cepstral normalisation data should be given by \"-cmnload\"\n");
-                ok_p = FALSE;
-            }
-        }
-    }
-
-    /* set values for search config */
-    for(s=jconf->search_root; s; s=s->next) {
-        lm = s->lmconf;
-        am = s->amconf;
-
-        /* force context dependency handling flag for word-recognition mode */
-        if (lm->lmtype == LM_DFA && lm->lmvar == LM_DFA_WORD) {
-            /* disable inter-word context dependent handling ("-no_ccd") */
-            s->ccd_handling = FALSE;
-            s->force_ccd_handling = TRUE;
-            /* force 1pass ("-1pass") */
-            s->compute_only_1pass = TRUE;
-        }
-
-        /* set default iwcd1 method from lm */
-        /* WARNING: THIS WILL BEHAVE WRONG IF MULTIPLE LM TYPE SPECIFIED */
-        /* RECOMMEND USING EXPLICIT OPTION */
-        if (am->iwcdmethod == IWCD_UNDEF) {
-            switch(lm->lmtype) {
-            case LM_PROB:
-                am->iwcdmethod = IWCD_NBEST;
-                break;
-            case LM_DFA:
-                am->iwcdmethod = IWCD_AVG;
-                break;
-            }
-        }
-
-    }
-
-    /* check option validity with the current lm type */
-    /* just a warning message for user */
-    for(s=jconf->search_root; s; s=s->next) {
-        lm = s->lmconf;
-        am = s->amconf;
-        if (lm->lmtype != LM_PROB) {
-            /* in case not a probabilistic model */
-            if (s->lmp.lmp_specified) {
-                jlog("WARNING: m_chkparam: \"-lmp\" only for N-gram, ignored\n");
-            }
-            if (s->lmp.lmp2_specified) {
-                jlog("WARNING: m_chkparam: \"-lmp2\" only for N-gram, ignored\n");
-            }
-            if (s->lmp.lm_penalty_trans != 0.0) {
-                jlog("WARNING: m_chkparam: \"-transp\" only for N-gram, ignored\n");
-            }
-            if (lm->head_silname && !strmatch(lm->head_silname, BEGIN_WORD_DEFAULT)) {
-                jlog("WARNING: m_chkparam: \"-silhead\" only for N-gram, ignored\n");
-            }
-            if (lm->tail_silname && !strmatch(lm->tail_silname, END_WORD_DEFAULT)) {
-                jlog("WARNING: m_chkparam: \"-siltail\" only for N-gram, ignored\n");
-            }
-            if (lm->enable_iwspword) {
-                jlog("WARNING: m_chkparam: \"-iwspword\" only for N-gram, ignored\n");
-            }
-            if (lm->iwspentry && !strmatch(lm->iwspentry, IWSPENTRY_DEFAULT)) {
-                jlog("WARNING: m_chkparam: \"-iwspentry\" only for N-gram, ignored\n");
-            }
+  /* check option validity with the current lm type */
+  /* just a warning message for user */
+  for (s = jconf->search_root; s; s = s->next) {
+    lm = s->lmconf;
+    am = s->amconf;
+    if (lm->lmtype != LM_PROB) {
+      /* in case not a probabilistic model */
+      if (s->lmp.lmp_specified) {
+        jlog("WARNING: m_chkparam: \"-lmp\" only for N-gram, ignored\n");
+      }
+      if (s->lmp.lmp2_specified) {
+        jlog("WARNING: m_chkparam: \"-lmp2\" only for N-gram, ignored\n");
+      }
+      if (s->lmp.lm_penalty_trans != 0.0) {
+        jlog("WARNING: m_chkparam: \"-transp\" only for N-gram, ignored\n");
+      }
+      if (lm->head_silname && !strmatch(lm->head_silname, BEGIN_WORD_DEFAULT)) {
+        jlog("WARNING: m_chkparam: \"-silhead\" only for N-gram, ignored\n");
+      }
+      if (lm->tail_silname && !strmatch(lm->tail_silname, END_WORD_DEFAULT)) {
+        jlog("WARNING: m_chkparam: \"-siltail\" only for N-gram, ignored\n");
+      }
+      if (lm->enable_iwspword) {
+        jlog("WARNING: m_chkparam: \"-iwspword\" only for N-gram, ignored\n");
+      }
+      if (lm->iwspentry && !strmatch(lm->iwspentry, IWSPENTRY_DEFAULT)) {
+        jlog("WARNING: m_chkparam: \"-iwspentry\" only for N-gram, ignored\n");
+      }
 #ifdef HASH_CACHE_IW
-            if (s->pass1.iw_cache_rate != 10) {
-                jlog("WARNING: m_chkparam: \"-iwcache\" only for N-gram, ignored\n");
-            }
+      if (s->pass1.iw_cache_rate != 10) {
+        jlog("WARNING: m_chkparam: \"-iwcache\" only for N-gram, ignored\n");
+      }
 #endif
 #ifdef SEPARATE_BY_UNIGRAM
-            if (lm->separate_wnum != 150) {
-                jlog("WARNING: m_chkparam: \"-sepnum\" only for N-gram, ignored\n");
-            }
+      if (lm->separate_wnum != 150) {
+        jlog("WARNING: m_chkparam: \"-sepnum\" only for N-gram, ignored\n");
+      }
 #endif
-        }
-        if (lm->lmtype != LM_DFA) {
-            /* in case not a deterministic model */
-            if (s->pass2.looktrellis_flag) {
-                jlog("WARNING: m_chkparam: \"-looktrellis\" only for grammar, ignored\n");
-            }
-            if (s->output.multigramout_flag) {
-                jlog("WARNING: m_chkparam: \"-multigramout\" only for grammar, ignored\n");
-            }
-            if (s->lmp.penalty1 != 0.0) {
-                jlog("WARNING: m_chkparam: \"-penalty1\" only for grammar, ignored\n");
-            }
-            if (s->lmp.penalty2 != 0.0) {
-                jlog("WARNING: m_chkparam: \"-penalty2\" only for grammar, ignored\n");
-            }
-        }
     }
+    if (lm->lmtype != LM_DFA) {
+      /* in case not a deterministic model */
+      if (s->pass2.looktrellis_flag) {
+        jlog("WARNING: m_chkparam: \"-looktrellis\" only for grammar, "
+             "ignored\n");
+      }
+      if (s->output.multigramout_flag) {
+        jlog("WARNING: m_chkparam: \"-multigramout\" only for grammar, "
+             "ignored\n");
+      }
+      if (s->lmp.penalty1 != 0.0) {
+        jlog("WARNING: m_chkparam: \"-penalty1\" only for grammar, ignored\n");
+      }
+      if (s->lmp.penalty2 != 0.0) {
+        jlog("WARNING: m_chkparam: \"-penalty2\" only for grammar, ignored\n");
+      }
+    }
+  }
 
 #ifdef HAVE_LIBFVAD
-    /* check parameter to be passed to libfvad */
-    if (jconf->detect.fvad_mode < -1) jconf->detect.fvad_mode = -1;
-    if (jconf->detect.fvad_mode > 3) {
-        jlog("WARNING: m_chkparam: invalid value for \"-fvad\": %d\n", jconf->detect.fvad_mode);
-        jlog("WARNING: m_chkparam: maximum aggressiveness is 3, use 3 now\n");
-        jconf->detect.fvad_mode = 3;
-    }
-    if (jconf->detect.fvad_smoothnum < 1) {
-        jlog("WARNING: m_chkparam: invalid value for 1st arg of \"-fvad_param\": %d\n", jconf->detect.fvad_smoothnum);
-        jlog("WARNING: m_chkparam: num should be >= 1, use 1 now\n");
-        jconf->detect.fvad_smoothnum = 1;
-    }
-    if (jconf->detect.fvad_thres < 0.0) {
-        jlog("WARNING: m_chkparam: invalid value for 2nd arg of \"-fvad_param\": %f\n", jconf->detect.fvad_thres);
-        jlog("WARNING: m_chkparam: thres should be >= 0.0, use 0.0 now\n");
-        jconf->detect.fvad_thres = 0.0;
-    }
-    if (jconf->detect.fvad_thres > 1.0) {
-        jlog("WARNING: m_chkparam: invalid value for 2nd arg of \"-fvad_param\": %f\n", jconf->detect.fvad_thres);
-        jlog("WARNING: m_chkparam: thres should be <= 1.0, use 1.0 now\n");
-        jconf->detect.fvad_thres = 1.0;
-    }
+  /* check parameter to be passed to libfvad */
+  if (jconf->detect.fvad_mode < -1)
+    jconf->detect.fvad_mode = -1;
+  if (jconf->detect.fvad_mode > 3) {
+    jlog("WARNING: m_chkparam: invalid value for \"-fvad\": %d\n",
+         jconf->detect.fvad_mode);
+    jlog("WARNING: m_chkparam: maximum aggressiveness is 3, use 3 now\n");
+    jconf->detect.fvad_mode = 3;
+  }
+  if (jconf->detect.fvad_smoothnum < 1) {
+    jlog("WARNING: m_chkparam: invalid value for 1st arg of \"-fvad_param\": "
+         "%d\n",
+         jconf->detect.fvad_smoothnum);
+    jlog("WARNING: m_chkparam: num should be >= 1, use 1 now\n");
+    jconf->detect.fvad_smoothnum = 1;
+  }
+  if (jconf->detect.fvad_thres < 0.0) {
+    jlog("WARNING: m_chkparam: invalid value for 2nd arg of \"-fvad_param\": "
+         "%f\n",
+         jconf->detect.fvad_thres);
+    jlog("WARNING: m_chkparam: thres should be >= 0.0, use 0.0 now\n");
+    jconf->detect.fvad_thres = 0.0;
+  }
+  if (jconf->detect.fvad_thres > 1.0) {
+    jlog("WARNING: m_chkparam: invalid value for 2nd arg of \"-fvad_param\": "
+         "%f\n",
+         jconf->detect.fvad_thres);
+    jlog("WARNING: m_chkparam: thres should be <= 1.0, use 1.0 now\n");
+    jconf->detect.fvad_thres = 1.0;
+  }
 #endif /* HAVE_LIBFVAD */
 
+  if (!ok_p) {
+    jlog("ERROR: m_chkparam: could not pass parameter check\n");
+  } else {
+    jlog("STAT: jconf successfully finalized\n");
+  }
 
-    if (!ok_p) {
-        jlog("ERROR: m_chkparam: could not pass parameter check\n");
-    } else {
-        jlog("STAT: jconf successfully finalized\n");
-    }
+  if (debug2_flag) {
+    print_jconf_overview(jconf);
+  }
 
-    if (debug2_flag) {
-        print_jconf_overview(jconf);
-    }
-
-    return ok_p;
+  return ok_p;
 }
 
 /**
@@ -411,45 +446,43 @@ j_jconf_finalize(Jconf *jconf)
  * @return the selected default beam width.
  * </EN>
  */
-static int
-default_width(HTK_HMM_INFO *hmminfo)
-{
-    if (strmatch(JULIUS_SETUP, "fast")) { /* for fast setup */
-        if (hmminfo->is_triphone) {
-            if (hmminfo->is_tied_mixture) {
-                /* tied-mixture triphones (PTM etc.) */
-                return(600);
-            } else {
-                /* shared-state triphone */
+static int default_width(HTK_HMM_INFO *hmminfo) {
+  if (strmatch(JULIUS_SETUP, "fast")) { /* for fast setup */
+    if (hmminfo->is_triphone) {
+      if (hmminfo->is_tied_mixture) {
+        /* tied-mixture triphones (PTM etc.) */
+        return (600);
+      } else {
+        /* shared-state triphone */
 #ifdef PASS1_IWCD
-                return(800);
+        return (800);
 #else
-                /* v2.1 compliant (no IWCD on 1st pass) */
-                return(1000);
+        /* v2.1 compliant (no IWCD on 1st pass) */
+        return (1000);
 #endif
-            }
-        } else {
-            /* monophone */
-            return(400);
-        }
-    } else {			/* for standard / v2.1 setup */
-        if (hmminfo->is_triphone) {
-            if (hmminfo->is_tied_mixture) {
-                /* tied-mixture triphones (PTM etc.) */
-                return(800);
-            } else {
-                /* shared-state triphone */
-#ifdef PASS1_IWCD
-                return(1500);
-#else
-                return(1500);		/* v2.1 compliant (no IWCD on 1st pass) */
-#endif
-            }
-        } else {
-            /* monophone */
-            return(700);
-        }
+      }
+    } else {
+      /* monophone */
+      return (400);
     }
+  } else { /* for standard / v2.1 setup */
+    if (hmminfo->is_triphone) {
+      if (hmminfo->is_tied_mixture) {
+        /* tied-mixture triphones (PTM etc.) */
+        return (800);
+      } else {
+        /* shared-state triphone */
+#ifdef PASS1_IWCD
+        return (1500);
+#else
+        return (1500); /* v2.1 compliant (no IWCD on 1st pass) */
+#endif
+      }
+    } else {
+      /* monophone */
+      return (700);
+    }
+  }
 }
 
 /**
@@ -479,30 +512,30 @@ default_width(HTK_HMM_INFO *hmminfo)
  * @callgraph
  * @callergraph
  */
-int
-set_beam_width(WCHMM_INFO *wchmm, int specified)
-{
-    int width;
-    int standard_width;
+int set_beam_width(WCHMM_INFO *wchmm, int specified) {
+  int width;
+  int standard_width;
 
-    if (specified == 0) { /* full search */
-        jlog("WARNING: doing full search (can be extremely slow)\n");
-        width = wchmm->n;
-    } else if (specified == -1) { /* not specified */
-        standard_width = default_width(wchmm->hmminfo); /* system default */
-        width = (int)(sqrt(wchmm->winfo->num) * 15.0); /* heuristic value!! */
-        if (width > standard_width) width = standard_width;
-        /* 2007/1/20 bgn */
-        if (width < MINIMAL_BEAM_WIDTH) {
-            width = MINIMAL_BEAM_WIDTH;
-        }
-        /* 2007/1/20 end */
-    } else {			/* actual value has been specified */
-        width = specified;
+  if (specified == 0) { /* full search */
+    jlog("WARNING: doing full search (can be extremely slow)\n");
+    width = wchmm->n;
+  } else if (specified == -1) {                     /* not specified */
+    standard_width = default_width(wchmm->hmminfo); /* system default */
+    width = (int)(sqrt(wchmm->winfo->num) * 15.0);  /* heuristic value!! */
+    if (width > standard_width)
+      width = standard_width;
+    /* 2007/1/20 bgn */
+    if (width < MINIMAL_BEAM_WIDTH) {
+      width = MINIMAL_BEAM_WIDTH;
     }
-    if (width > wchmm->n) width = wchmm->n;
+    /* 2007/1/20 end */
+  } else { /* actual value has been specified */
+    width = specified;
+  }
+  if (width > wchmm->n)
+    width = wchmm->n;
 
-    return(width);
+  return (width);
 }
 
 /* end of file */

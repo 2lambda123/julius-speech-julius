@@ -100,9 +100,9 @@
  */
 /*
  * Copyright (c) 1991-2013 Kawahara Lab., Kyoto University
- * Copyright (c) 2000-2005 Shikano Lab., Nara Institute of Science and Technology
- * Copyright (c) 2005-2013 Julius project team, Nagoya Institute of Technology
- * All rights reserved
+ * Copyright (c) 2000-2005 Shikano Lab., Nara Institute of Science and
+ * Technology Copyright (c) 2005-2013 Julius project team, Nagoya Institute of
+ * Technology All rights reserved
  */
 
 #include <julius/julius.h>
@@ -138,105 +138,114 @@
  * @callergraph
  * @callgraph
  */
-boolean
-adin_setup_param(ADIn *adin, Jconf *jconf)
-{
-    float samples_in_msec;
-    int freq;
+boolean adin_setup_param(ADIn *adin, Jconf *jconf) {
+  float samples_in_msec;
+  int freq;
 #ifdef HAVE_LIBFVAD
-    int i;
+  int i;
 #endif /* HAVE_LIBFVAD */
 
-    if (jconf->input.sfreq <= 0) {
-        jlog("ERROR: adin_setup_param: going to set smpfreq to %d\n", jconf->input.sfreq);
-        return FALSE;
-    }
-    if (jconf->detect.silence_cut < 2) {
-        adin->adin_cut_on = (jconf->detect.silence_cut == 1) ? TRUE : FALSE;
-    } else {
-        adin->adin_cut_on = adin->silence_cut_default;
-    }
-    adin->strip_flag = jconf->preprocess.strip_zero_sample;
-    if (verbose_flag == FALSE) set_strip_zero_warning(FALSE);
-    adin->thres = jconf->detect.level_thres;
+  if (jconf->input.sfreq <= 0) {
+    jlog("ERROR: adin_setup_param: going to set smpfreq to %d\n",
+         jconf->input.sfreq);
+    return FALSE;
+  }
+  if (jconf->detect.silence_cut < 2) {
+    adin->adin_cut_on = (jconf->detect.silence_cut == 1) ? TRUE : FALSE;
+  } else {
+    adin->adin_cut_on = adin->silence_cut_default;
+  }
+  adin->strip_flag = jconf->preprocess.strip_zero_sample;
+  if (verbose_flag == FALSE)
+    set_strip_zero_warning(FALSE);
+  adin->thres = jconf->detect.level_thres;
 #ifdef HAVE_PTHREAD
-    if (adin->enable_thread && jconf->decodeopt.segment) {
-        adin->ignore_speech_while_recog = FALSE;
-    } else {
-        adin->ignore_speech_while_recog = TRUE;
-    }
+  if (adin->enable_thread && jconf->decodeopt.segment) {
+    adin->ignore_speech_while_recog = FALSE;
+  } else {
+    adin->ignore_speech_while_recog = TRUE;
+  }
 #endif
-    adin->need_zmean = jconf->preprocess.use_zmean;
-    adin->level_coef = jconf->preprocess.level_coef;
-    /* calc & set internal parameter from configuration */
-    freq = jconf->input.sfreq;
-    samples_in_msec = (float) freq / (float)1000.0;
-    adin->chunk_size = jconf->detect.chunk_size;
-    /* cycle buffer length = head margin length */
-    adin->c_length = (int)((float)jconf->detect.head_margin_msec * samples_in_msec);	/* in msec. */
-    if (adin->chunk_size > adin->c_length) {
-        jlog("ERROR: adin_setup_param: chunk size (%d) > header margin (%d)\n", adin->chunk_size, adin->c_length);
-        return FALSE;
-    }
-    /* compute zerocross trigger count threshold in the cycle buffer */
-    adin->noise_zerocross = jconf->detect.zero_cross_num * adin->c_length / freq;
-    /* variables that comes from the tail margin length (in wstep) */
-    adin->nc_max = (int)((float)(jconf->detect.tail_margin_msec * samples_in_msec / (float)adin->chunk_size)) + 2;
-    adin->sbsize = jconf->detect.tail_margin_msec * samples_in_msec + (adin->c_length * jconf->detect.zero_cross_num / 200);
-    adin->c_offset = 0;
+  adin->need_zmean = jconf->preprocess.use_zmean;
+  adin->level_coef = jconf->preprocess.level_coef;
+  /* calc & set internal parameter from configuration */
+  freq = jconf->input.sfreq;
+  samples_in_msec = (float)freq / (float)1000.0;
+  adin->chunk_size = jconf->detect.chunk_size;
+  /* cycle buffer length = head margin length */
+  adin->c_length = (int)((float)jconf->detect.head_margin_msec *
+                         samples_in_msec); /* in msec. */
+  if (adin->chunk_size > adin->c_length) {
+    jlog("ERROR: adin_setup_param: chunk size (%d) > header margin (%d)\n",
+         adin->chunk_size, adin->c_length);
+    return FALSE;
+  }
+  /* compute zerocross trigger count threshold in the cycle buffer */
+  adin->noise_zerocross = jconf->detect.zero_cross_num * adin->c_length / freq;
+  /* variables that comes from the tail margin length (in wstep) */
+  adin->nc_max = (int)((float)(jconf->detect.tail_margin_msec *
+                               samples_in_msec / (float)adin->chunk_size)) +
+                 2;
+  adin->sbsize = jconf->detect.tail_margin_msec * samples_in_msec +
+                 (adin->c_length * jconf->detect.zero_cross_num / 200);
+  adin->c_offset = 0;
 
 #ifdef HAVE_PTHREAD
-    adin->transfer_online = FALSE;
-    adin->speech = NULL;
-    if (jconf->reject.rejectlonglen >= 0) {
-        adin->freezelen = (jconf->reject.rejectlonglen + 500.0) * jconf->input.sfreq / 1000.0;
-    } else {
-        adin->freezelen = MAXSPEECHLEN;
-    }
+  adin->transfer_online = FALSE;
+  adin->speech = NULL;
+  if (jconf->reject.rejectlonglen >= 0) {
+    adin->freezelen =
+        (jconf->reject.rejectlonglen + 500.0) * jconf->input.sfreq / 1000.0;
+  } else {
+    adin->freezelen = MAXSPEECHLEN;
+  }
 #endif
 
-    /**********************/
-    /* initialize buffers */
-    /**********************/
-    adin->buffer = (SP16 *)mymalloc(sizeof(SP16) * MAXSPEECHLEN);
-    adin->cbuf = (SP16 *)mymalloc(sizeof(SP16) * adin->c_length);
-    adin->swapbuf = (SP16 *)mymalloc(sizeof(SP16) * adin->sbsize);
-    if (adin->down_sample) {
-        adin->io_rate = 3;		/* 48 / 16 (fixed) */
-        adin->buffer48 = (SP16 *)mymalloc(sizeof(SP16) * MAXSPEECHLEN * adin->io_rate);
-    }
-    if (adin->adin_cut_on) {
-        init_count_zc_e(&(adin->zc), adin->c_length);
-    }
+  /**********************/
+  /* initialize buffers */
+  /**********************/
+  adin->buffer = (SP16 *)mymalloc(sizeof(SP16) * MAXSPEECHLEN);
+  adin->cbuf = (SP16 *)mymalloc(sizeof(SP16) * adin->c_length);
+  adin->swapbuf = (SP16 *)mymalloc(sizeof(SP16) * adin->sbsize);
+  if (adin->down_sample) {
+    adin->io_rate = 3; /* 48 / 16 (fixed) */
+    adin->buffer48 =
+        (SP16 *)mymalloc(sizeof(SP16) * MAXSPEECHLEN * adin->io_rate);
+  }
+  if (adin->adin_cut_on) {
+    init_count_zc_e(&(adin->zc), adin->c_length);
+  }
 
-    adin->need_init = TRUE;
+  adin->need_init = TRUE;
 
-    adin->rehash = FALSE;
+  adin->rehash = FALSE;
 
 #ifdef HAVE_LIBFVAD
-    if (jconf->detect.fvad_mode < 0) {
-        adin->fvad = NULL;
-    } else {
-        /* initialize libfvad */
-        adin->fvad = fvad_new();
-        adin->fvad_lastresultnum = jconf->detect.fvad_smoothnum;
-        adin->fvad_thres = jconf->detect.fvad_thres;
-        /* set up parameters */
-        fvad_set_sample_rate(adin->fvad, jconf->input.sfreq);
-        fvad_set_mode(adin->fvad, jconf->detect.fvad_mode);
-        adin->fvad_frameshiftinms = 10;
-        /* clean up working area */
-        adin->fvad_speechlen = 0;
-        adin->fvad_framesize = jconf->input.sfreq * adin->fvad_frameshiftinms / 1000;
-        adin->fvad_lastresult = (int *)mymalloc(sizeof(int) * adin->fvad_lastresultnum);
-        for (i = 0; i < adin->fvad_lastresultnum; i++) adin->fvad_lastresult[i] = 0;
-        adin->fvad_lastp = 0;
-        adin->fvad_last_voice = FALSE;
-    }
+  if (jconf->detect.fvad_mode < 0) {
+    adin->fvad = NULL;
+  } else {
+    /* initialize libfvad */
+    adin->fvad = fvad_new();
+    adin->fvad_lastresultnum = jconf->detect.fvad_smoothnum;
+    adin->fvad_thres = jconf->detect.fvad_thres;
+    /* set up parameters */
+    fvad_set_sample_rate(adin->fvad, jconf->input.sfreq);
+    fvad_set_mode(adin->fvad, jconf->detect.fvad_mode);
+    adin->fvad_frameshiftinms = 10;
+    /* clean up working area */
+    adin->fvad_speechlen = 0;
+    adin->fvad_framesize =
+        jconf->input.sfreq * adin->fvad_frameshiftinms / 1000;
+    adin->fvad_lastresult =
+        (int *)mymalloc(sizeof(int) * adin->fvad_lastresultnum);
+    for (i = 0; i < adin->fvad_lastresultnum; i++)
+      adin->fvad_lastresult[i] = 0;
+    adin->fvad_lastp = 0;
+    adin->fvad_last_voice = FALSE;
+  }
 #endif /* HAVE_LIBFVAD */
 
-    return TRUE;
-
+  return TRUE;
 }
 
 /**
@@ -251,100 +260,103 @@ adin_setup_param(ADIn *adin, Jconf *jconf)
  * @param from [in] Purge samples in range [0..from-1].
  *
  */
-static void
-adin_purge(ADIn *a, int from)
-{
-    if (from > 0 && a->current_len - from > 0) {
-        memmove(a->buffer, &(a->buffer[from]), (a->current_len - from) * sizeof(SP16));
-    }
-    a->bp = a->current_len - from;
+static void adin_purge(ADIn *a, int from) {
+  if (from > 0 && a->current_len - from > 0) {
+    memmove(a->buffer, &(a->buffer[from]),
+            (a->current_len - from) * sizeof(SP16));
+  }
+  a->bp = a->current_len - from;
 }
 
 #ifdef HAVE_LIBFVAD
 /* proceed libfvad detection: return 1 for speech part, 0 for non-speech part */
-static boolean
-fvad_proceed(ADIn *a, SP16 *speech, int samplenum)
-{
-    int i, j, k;
-    int ret, result;
-    float sum;
+static boolean fvad_proceed(ADIn *a, SP16 *speech, int samplenum) {
+  int i, j, k;
+  int ret, result;
+  float sum;
 
-    if (a->fvad == NULL) return TRUE;
+  if (a->fvad == NULL)
+    return TRUE;
 
-    if (a->fvad_speechlen + samplenum > MAXSPEECHLEN) {
-        /* buffer overflow */
-        samplenum = MAXSPEECHLEN - a->fvad_speechlen;
+  if (a->fvad_speechlen + samplenum > MAXSPEECHLEN) {
+    /* buffer overflow */
+    samplenum = MAXSPEECHLEN - a->fvad_speechlen;
+  }
+  /* append incoming samples to libfvad buffer */
+  for (i = 0; i < samplenum; i++) {
+    a->fvad_speech[a->fvad_speechlen + i] = speech[i];
+  }
+  a->fvad_speechlen += samplenum;
+  /* process per 10ms block till buffered end */
+  for (i = 0; i + a->fvad_framesize < a->fvad_speechlen;
+       i += a->fvad_framesize) {
+    ret = fvad_process(a->fvad, &(a->fvad_speech[i]), a->fvad_framesize);
+    if (ret < 0) {
+      /* error */
+      jlog("ERROR: fvad_proceed: internal error occurred at fvad_process()\n");
+      break;
     }
-    /* append incoming samples to libfvad buffer */
-    for (i = 0; i < samplenum; i++) {
-        a->fvad_speech[a->fvad_speechlen + i] = speech[i];
-    }
-    a->fvad_speechlen += samplenum;
-    /* process per 10ms block till buffered end */
-    for (i = 0; i + a->fvad_framesize < a->fvad_speechlen; i += a->fvad_framesize) {
-        ret = fvad_process(a->fvad, &(a->fvad_speech[i]), a->fvad_framesize);
-        if (ret < 0) {
-            /* error */
-            jlog("ERROR: fvad_proceed: internal error occurred at fvad_process()\n");
-            break;
-        }
-        a->fvad_lastresult[a->fvad_lastp] = ret;
-        if (++a->fvad_lastp >= a->fvad_lastresultnum) a->fvad_lastp -= a->fvad_lastresultnum;
-    }
-    /* get smoothed result from last 5 ticks */
-    sum = 0.0f;
-    for (j = 0; j < a->fvad_lastresultnum; j++) sum += (float)a->fvad_lastresult[j];
-    sum /= (float)a->fvad_lastresultnum;
-    /* judge */
-    if (sum >= a->fvad_thres)
-        a->fvad_last_voice = TRUE;
-    else
-        a->fvad_last_voice = FALSE;
+    a->fvad_lastresult[a->fvad_lastp] = ret;
+    if (++a->fvad_lastp >= a->fvad_lastresultnum)
+      a->fvad_lastp -= a->fvad_lastresultnum;
+  }
+  /* get smoothed result from last 5 ticks */
+  sum = 0.0f;
+  for (j = 0; j < a->fvad_lastresultnum; j++)
+    sum += (float)a->fvad_lastresult[j];
+  sum /= (float)a->fvad_lastresultnum;
+  /* judge */
+  if (sum >= a->fvad_thres)
+    a->fvad_last_voice = TRUE;
+  else
+    a->fvad_last_voice = FALSE;
 
-    /* flush processed samples */
-    k = 0;
-    for (j = i; j < a->fvad_speechlen; j++) {
-        a->fvad_speech[k] = a->fvad_speech[j];
-        k++;
-    }
-    a->fvad_speechlen = k;
+  /* flush processed samples */
+  k = 0;
+  for (j = i; j < a->fvad_speechlen; j++) {
+    a->fvad_speech[k] = a->fvad_speech[j];
+    k++;
+  }
+  a->fvad_speechlen = k;
 
-    return a->fvad_last_voice;
+  return a->fvad_last_voice;
 }
 #endif /* HAVE_LIBFVAD */
 
 #ifdef HAVE_LIBFVAD
 /* work area for auto gain control */
-static int fvad_cont_count = 0;    /* continuous count of status keep */
-static boolean fvad_last_result = FALSE;   /* keeps last fvad result */
-static int fvad_level_max = 0;     /* maximum input level in cycle buffer */
-static int fvad_first_time = 0;    /* flag to detect the first speech */
+static int fvad_cont_count = 0;          /* continuous count of status keep */
+static boolean fvad_last_result = FALSE; /* keeps last fvad result */
+static int fvad_level_max = 0;  /* maximum input level in cycle buffer */
+static int fvad_first_time = 0; /* flag to detect the first speech */
 static float fvad_first_rate;
 
 /* change scale and update cycle buffer */
-static int
-update_audio_scale(Recog *recog, float scale, int totallen) {
-    ADIn *a = recog->adin;
-    int i, len;
-    int zc;
-    float totalsec;
-    int hour, minutes;
-    float second;
+static int update_audio_scale(Recog *recog, float scale, int totallen) {
+  ADIn *a = recog->adin;
+  int i, len;
+  int zc;
+  float totalsec;
+  int hour, minutes;
+  float second;
 
-    totalsec = (float)totallen / (float)recog->jconf->input.sfreq;
-    hour = (int)totalsec / 3600;
-    minutes = (int)((totalsec - hour * 3600) / 60);
-    second = totalsec - hour * 3600 - minutes * 60;
+  totalsec = (float)totallen / (float)recog->jconf->input.sfreq;
+  hour = (int)totalsec / 3600;
+  minutes = (int)((totalsec - hour * 3600) / 60);
+  second = totalsec - hour * 3600 - minutes * 60;
 
-    zc_copy_buffer(&(a->zc), a->cbuf, &len);
-    for(i = 0; i < len; i++) a->cbuf[i] = a->cbuf[i] * scale / a->level_coef;
-    reset_count_zc_e(&(a->zc), a->thres, a->c_length, a->c_offset);
-    zc = count_zc_e(&(a->zc), a->cbuf, len);
-    if (verbose_flag) jlog("STAT: AGC: %.2f to %.2f at %02d:%02d:%02.2f\n", recog->adin->level_coef, scale, hour, minutes, second);
-    recog->adin->level_coef = scale;
-    recog->jconf->preprocess.level_coef = scale;
+  zc_copy_buffer(&(a->zc), a->cbuf, &len);
+  for (i = 0; i < len; i++)
+    a->cbuf[i] = a->cbuf[i] * scale / a->level_coef;
+  reset_count_zc_e(&(a->zc), a->thres, a->c_length, a->c_offset);
+  zc = count_zc_e(&(a->zc), a->cbuf, len);
+  if (verbose_flag)
+    jlog("STAT: AGC: %.2f to %.2f at %02d:%02d:%02.2f\n",
+         recog->adin->level_coef, scale, hour, minutes, second);
+  recog->adin->level_coef = scale;
+  recog->jconf->preprocess.level_coef = scale;
 
-    return zc;
+  return zc;
 }
 
 #endif /* HAVE_LIBFVAD */
@@ -421,708 +433,761 @@ update_audio_scale(Recog *recog, float scale, int totallen) {
  * @callgraph
  *
  */
-static int
-adin_cut(int (*ad_process)(SP16 *, int, Recog *), int (*ad_check)(Recog *), Recog *recog)
-{
-    ADIn *a;
-    int i;
-    int ad_process_ret;
-    int imax, len, cnt;
-    int wstep;
-    int end_status = 0;	/* return value */
-    boolean transfer_online_local;	/* local repository of transfer_online */
-    int zc;		/* count of zero cross */
+static int adin_cut(int (*ad_process)(SP16 *, int, Recog *),
+                    int (*ad_check)(Recog *), Recog *recog) {
+  ADIn *a;
+  int i;
+  int ad_process_ret;
+  int imax, len, cnt;
+  int wstep;
+  int end_status = 0;            /* return value */
+  boolean transfer_online_local; /* local repository of transfer_online */
+  int zc;                        /* count of zero cross */
 #ifdef HAVE_LIBFVAD
-    boolean fv;
+  boolean fv;
 #endif /* HAVE_LIBFVAD */
-    a = recog->adin;
+  a = recog->adin;
 
-    /*
-     * there are 3 buffers:
-     *   temporary storage queue: buffer[]
-     *   cycle buffer for zero-cross counting: (in zc_e)
-     *   swap buffer for re-starting after short tail silence
-     *
-     * Each samples are first read to buffer[], then passed to count_zc_e()
-     * to find trigger.  Samples between trigger and end of speech are
-     * passed to (*ad_process) with pointer to the first sample and its length.
-     *
-     */
+  /*
+   * there are 3 buffers:
+   *   temporary storage queue: buffer[]
+   *   cycle buffer for zero-cross counting: (in zc_e)
+   *   swap buffer for re-starting after short tail silence
+   *
+   * Each samples are first read to buffer[], then passed to count_zc_e()
+   * to find trigger.  Samples between trigger and end of speech are
+   * passed to (*ad_process) with pointer to the first sample and its length.
+   *
+   */
 
-    if (a->need_init) {
-        a->bpmax = MAXSPEECHLEN;
-        a->bp = 0;
-        a->is_valid_data = FALSE;
-        /* reset zero-cross status */
-        if (a->adin_cut_on) {
-            reset_count_zc_e(&(a->zc), a->thres, a->c_length, a->c_offset);
-        }
-        a->end_of_stream = FALSE;
-        a->nc = 0;
-        a->sblen = 0;
-        a->need_init = FALSE;		/* for next call */
+  if (a->need_init) {
+    a->bpmax = MAXSPEECHLEN;
+    a->bp = 0;
+    a->is_valid_data = FALSE;
+    /* reset zero-cross status */
+    if (a->adin_cut_on) {
+      reset_count_zc_e(&(a->zc), a->thres, a->c_length, a->c_offset);
+    }
+    a->end_of_stream = FALSE;
+    a->nc = 0;
+    a->sblen = 0;
+    a->need_init = FALSE; /* for next call */
 #ifdef HAVE_LIBFVAD
-        if (a->fvad) {
-            a->fvad_speechlen = 0;
-            for (i = 0; i < a->fvad_lastresultnum; i++) a->fvad_lastresult[i] = 0;
-            a->fvad_lastp = 0;
-        }
+    if (a->fvad) {
+      a->fvad_speechlen = 0;
+      for (i = 0; i < a->fvad_lastresultnum; i++)
+        a->fvad_lastresult[i] = 0;
+      a->fvad_lastp = 0;
+    }
 #endif /* HAVE_LIBFVAD */
+  }
+
+  /****************/
+  /* resume input */
+  /****************/
+  //  if (!a->adin_cut_on && a->is_valid_data == TRUE) {
+  //    callback_exec(CALLBACK_EVENT_SPEECH_START, recog);
+  //  }
+
+  /*************/
+  /* main loop */
+  /*************/
+  for (;;) {
+
+    /* check end of input by end of stream */
+    if (a->end_of_stream && a->bp == 0)
+      break;
+
+    /****************************/
+    /* read in new speech input */
+    /****************************/
+    if (a->end_of_stream) {
+      /* already reaches end of stream, just process the rest */
+      a->current_len = a->bp;
+    } else {
+      /*****************************************************/
+      /* get samples from input device to temporary buffer */
+      /*****************************************************/
+      /* buffer[0..bp] is the current remaining samples */
+      /*
+      mic input - samples exist in a device buffer
+             tcpip input - samples exist in a socket
+             file input - samples in a file
+
+      Return value is the number of read samples.
+      If no data exists in the device (in case of mic input), ad_read()
+      will return 0.  If reached end of stream (in case end of file or
+      receive end ack from tcpip client), it will return -1.
+      If error, returns -2. If the device requests segmentation, returns -3.
+           */
+      if (a->down_sample) {
+        /* get 48kHz samples to temporal buffer */
+        cnt = (*(a->ad_read))(a->buffer48, (a->bpmax - a->bp) * a->io_rate);
+      } else {
+        cnt = (*(a->ad_read))(&(a->buffer[a->bp]), a->bpmax - a->bp);
+      }
+      if (cnt < 0) { /* end of stream / segment or error */
+        /* set the end status */
+        switch (cnt) {
+        case -1: /* end of stream */
+          a->input_side_segment = FALSE;
+          end_status = 0;
+          break;
+        case -2:
+          a->input_side_segment = FALSE;
+          end_status = -1;
+          break;
+        case -3:
+          a->input_side_segment = TRUE;
+          end_status = 0;
+        }
+        /* now the input has been ended,
+           we should not get further speech input in the next loop,
+           instead just process the samples in the temporary buffer until
+           the entire data is processed. */
+        a->end_of_stream = TRUE;
+        cnt = 0; /* no new input */
+        /* in case the first trial of ad_read() fails, exit this loop */
+        if (a->bp == 0)
+          break;
+      }
+      if (a->down_sample && cnt != 0) {
+        /* convert to 16kHz  */
+        cnt = ds48to16(&(a->buffer[a->bp]), a->buffer48, cnt, a->bpmax - a->bp,
+                       a->ds);
+        if (cnt < 0) { /* conversion error */
+          jlog("ERROR: adin_cut: error in down sampling\n");
+          end_status = -1;
+          a->end_of_stream = TRUE;
+          cnt = 0;
+          if (a->bp == 0)
+            break;
+        }
+      }
+      if (cnt > 0 && a->level_coef != 1.0) {
+        /* scale the level of incoming input */
+        for (i = a->bp; i < a->bp + cnt; i++) {
+          a->buffer[i] = (SP16)((float)a->buffer[i] * a->level_coef);
+        }
+      }
+
+      /*************************************************/
+      /* execute callback here for incoming raw data stream.*/
+      /* the content of buffer[bp...bp+cnt-1] or the   */
+      /* length can be modified in the functions.      */
+      /*************************************************/
+      if (cnt > 0) {
+#ifdef ENABLE_PLUGIN
+        plugin_exec_adin_captured(&(a->buffer[a->bp]), cnt);
+#endif
+        callback_exec_adin(CALLBACK_ADIN_CAPTURED, recog, &(a->buffer[a->bp]),
+                           cnt);
+        /* record total number of captured samples */
+        a->total_captured_len += cnt;
+      }
+
+      /*************************************************/
+      /* some speech processing for the incoming input */
+      /*************************************************/
+      if (cnt > 0) {
+        if (a->strip_flag) {
+          /* strip off successive zero samples */
+          len = strip_zero(&(a->buffer[a->bp]), cnt);
+          if (len != cnt)
+            cnt = len;
+        }
+        if (a->need_zmean) {
+          /* remove DC offset */
+          sub_zmean(&(a->buffer[a->bp]), cnt);
+        }
+      }
+
+      /* current len = current samples in buffer */
+      a->current_len = a->bp + cnt;
+    }
+#ifdef THREAD_DEBUG
+    if (a->end_of_stream) {
+      jlog("DEBUG: adin_cut: stream already ended\n");
+    }
+    if (cnt > 0) {
+      jlog("DEBUG: adin_cut: get %d samples [%d-%d]\n", a->current_len - a->bp,
+           a->bp, a->current_len);
+    }
+#endif
+
+    /**************************************************/
+    /* call the periodic callback (non threaded mode) */
+    /*************************************************/
+    /* this function is mainly for periodic checking of incoming command
+       in module mode */
+    /* in threaded mode, this will be done in process thread, not here in adin
+     * thread */
+    if (ad_check != NULL
+#ifdef HAVE_PTHREAD
+        && !a->enable_thread
+#endif
+    ) {
+      /* if ad_check() returns value < 0, termination of speech input is
+       * required */
+      if ((i = (*ad_check)(recog)) <
+          0) { /* -1: soft termination -2: hard termination */
+        //	if ((i == -1 && current_len == 0) || i == -2) {
+        if (i == -2 || (i == -1 && a->is_valid_data == FALSE)) {
+          end_status = -2; /* recognition terminated by outer function */
+          /* execute callback */
+          if (a->current_len > 0) {
+            callback_exec(CALLBACK_EVENT_SPEECH_STOP, recog);
+          }
+          a->need_init = TRUE; /* bufer status shoule be reset at next call */
+          goto break_input;
+        }
+      }
     }
 
-    /****************/
-    /* resume input */
-    /****************/
-    //  if (!a->adin_cut_on && a->is_valid_data == TRUE) {
-    //    callback_exec(CALLBACK_EVENT_SPEECH_START, recog);
-    //  }
+    /***********************************************************************/
+    /* if no data has got but not end of stream, repeat next input samples */
+    /***********************************************************************/
+    if (a->current_len == 0)
+      continue;
 
-    /*************/
-    /* main loop */
-    /*************/
-    for (;;) {
+    /* When not adin_cut mode, all incoming data is valid.
+       So is_valid_data should be set to TRUE when some input first comes
+       till this input ends.  So, if some data comes, set is_valid_data to
+       TRUE here. */
+    if (!a->adin_cut_on && a->is_valid_data == FALSE && a->current_len > 0) {
+      a->is_valid_data = TRUE;
+      callback_exec(CALLBACK_EVENT_SPEECH_START, recog);
+    }
 
-        /* check end of input by end of stream */
-        if (a->end_of_stream && a->bp == 0) break;
+    /******************************************************/
+    /* prepare for processing samples in temporary buffer */
+    /******************************************************/
 
-        /****************************/
-        /* read in new speech input */
-        /****************************/
-        if (a->end_of_stream) {
-            /* already reaches end of stream, just process the rest */
-            a->current_len = a->bp;
-        } else {
-            /*****************************************************/
-            /* get samples from input device to temporary buffer */
-            /*****************************************************/
-            /* buffer[0..bp] is the current remaining samples */
-            /*
-            mic input - samples exist in a device buffer
-                   tcpip input - samples exist in a socket
-                   file input - samples in a file
+    wstep =
+        a->chunk_size; /* process unit (should be smaller than cycle buffer) */
 
-            Return value is the number of read samples.
-            If no data exists in the device (in case of mic input), ad_read()
-            will return 0.  If reached end of stream (in case end of file or
-            receive end ack from tcpip client), it will return -1.
-            If error, returns -2. If the device requests segmentation, returns -3.
-                 */
-            if (a->down_sample) {
-                /* get 48kHz samples to temporal buffer */
-                cnt = (*(a->ad_read))(a->buffer48, (a->bpmax - a->bp) * a->io_rate);
-            } else {
-                cnt = (*(a->ad_read))(&(a->buffer[a->bp]), a->bpmax - a->bp);
-            }
-            if (cnt < 0) {		/* end of stream / segment or error */
-                /* set the end status */
-                switch(cnt) {
-                case -1:		/* end of stream */
-                    a->input_side_segment = FALSE;
-                    end_status = 0;
-                    break;
-                case -2:
-                    a->input_side_segment = FALSE;
-                    end_status = -1;
-                    break;
-                case -3:
-                    a->input_side_segment = TRUE;
-                    end_status = 0;
-                }
-                /* now the input has been ended,
-                   we should not get further speech input in the next loop,
-                   instead just process the samples in the temporary buffer until
-                   the entire data is processed. */
-                a->end_of_stream = TRUE;
-                cnt = 0;			/* no new input */
-                /* in case the first trial of ad_read() fails, exit this loop */
-                if (a->bp == 0) break;
-            }
-            if (a->down_sample && cnt != 0) {
-                /* convert to 16kHz  */
-                cnt = ds48to16(&(a->buffer[a->bp]), a->buffer48, cnt, a->bpmax - a->bp, a->ds);
-                if (cnt < 0) {		/* conversion error */
-                    jlog("ERROR: adin_cut: error in down sampling\n");
-                    end_status = -1;
-                    a->end_of_stream = TRUE;
-                    cnt = 0;
-                    if (a->bp == 0) break;
-                }
-            }
-            if (cnt > 0 && a->level_coef != 1.0) {
-                /* scale the level of incoming input */
-                for (i = a->bp; i < a->bp + cnt; i++) {
-                    a->buffer[i] = (SP16) ((float)a->buffer[i] * a->level_coef);
-                }
-            }
-
-            /*************************************************/
-            /* execute callback here for incoming raw data stream.*/
-            /* the content of buffer[bp...bp+cnt-1] or the   */
-            /* length can be modified in the functions.      */
-            /*************************************************/
-            if (cnt > 0) {
-#ifdef ENABLE_PLUGIN
-                plugin_exec_adin_captured(&(a->buffer[a->bp]), cnt);
-#endif
-                callback_exec_adin(CALLBACK_ADIN_CAPTURED, recog, &(a->buffer[a->bp]), cnt);
-                /* record total number of captured samples */
-                a->total_captured_len += cnt;
-            }
-
-            /*************************************************/
-            /* some speech processing for the incoming input */
-            /*************************************************/
-            if (cnt > 0) {
-                if (a->strip_flag) {
-                    /* strip off successive zero samples */
-                    len = strip_zero(&(a->buffer[a->bp]), cnt);
-                    if (len != cnt) cnt = len;
-                }
-                if (a->need_zmean) {
-                    /* remove DC offset */
-                    sub_zmean(&(a->buffer[a->bp]), cnt);
-                }
-            }
-
-            /* current len = current samples in buffer */
-            a->current_len = a->bp + cnt;
-        }
-#ifdef THREAD_DEBUG
-        if (a->end_of_stream) {
-            jlog("DEBUG: adin_cut: stream already ended\n");
-        }
-        if (cnt > 0) {
-            jlog("DEBUG: adin_cut: get %d samples [%d-%d]\n", a->current_len - a->bp, a->bp, a->current_len);
-        }
-#endif
-
-        /**************************************************/
-        /* call the periodic callback (non threaded mode) */
-        /*************************************************/
-        /* this function is mainly for periodic checking of incoming command
-           in module mode */
-        /* in threaded mode, this will be done in process thread, not here in adin thread */
-        if (ad_check != NULL
+    /* imax: total length that should be processed at one ad_read() call */
+    /* if in real-time mode and not threaded, recognition process
+       will be called and executed as the ad_process() callback within
+       this function.  If the recognition speed is over the real time,
+       processing all the input samples at the loop below may result in the
+       significant delay of getting next input, that may result in the buffer
+       overflow of the device (namely a microphone device will suffer from
+       this). So, in non-threaded mode, in order to avoid buffer overflow and
+       input frame dropping, we will leave here by processing
+       only one segment [0..wstep], and leave the rest in the temporary buffer.
+    */
 #ifdef HAVE_PTHREAD
-                && !a->enable_thread
+    if (a->enable_thread)
+      imax = a->current_len; /* process whole */
+    else
+      imax = (a->current_len < wstep) ? a->current_len : wstep; /* one step */
+#else
+    imax = (a->current_len < wstep) ? a->current_len : wstep; /* one step */
 #endif
-           ) {
-            /* if ad_check() returns value < 0, termination of speech input is required */
-            if ((i = (*ad_check)(recog)) < 0) { /* -1: soft termination -2: hard termination */
-                //	if ((i == -1 && current_len == 0) || i == -2) {
-                if (i == -2 ||
-                        (i == -1 && a->is_valid_data == FALSE)) {
-                    end_status = -2;	/* recognition terminated by outer function */
-                    /* execute callback */
-                    if (a->current_len > 0) {
-                        callback_exec(CALLBACK_EVENT_SPEECH_STOP, recog);
-                    }
-                    a->need_init = TRUE; /* bufer status shoule be reset at next call */
-                    goto break_input;
+
+    /* wstep: unit length for the loop below */
+    if (wstep > a->current_len)
+      wstep = a->current_len;
+
+#ifdef THREAD_DEBUG
+    jlog("DEBUG: process %d samples by %d step\n", imax, wstep);
+#endif
+
+#ifdef HAVE_PTHREAD
+    if (a->enable_thread) {
+      /* get transfer status to local */
+      pthread_mutex_lock(&(a->mutex));
+      transfer_online_local = a->transfer_online;
+      pthread_mutex_unlock(&(a->mutex));
+    }
+#endif
+
+    /*********************************************************/
+    /* start processing buffer[0..current_len] by wstep step */
+    /*********************************************************/
+    i = 0;
+    while (i + wstep <= imax) {
+
+      if (a->adin_cut_on) {
+
+        /********************/
+        /* check triggering */
+        /********************/
+        /* the cycle buffer in count_zc_e() holds the last
+           samples of (head_margin) miliseconds, and the zerocross
+           over the threshold level are counted within the cycle buffer */
+
+        /* store the new data to cycle buffer and update the count */
+        /* return zero-cross num in the cycle buffer */
+        zc = count_zc_e(&(a->zc), &(a->buffer[i]), wstep);
+
+#ifdef HAVE_LIBFVAD
+        /*********************/
+        /* auto gain control */
+        /*********************/
+
+        /* get voice/noise status from fvad */
+        fv = fvad_proceed(a, &(a->buffer[i]), wstep);
+        if (a->fvad && recog->jconf->detect.auto_gain_control_flag) {
+          float scale;
+          int total_processed_len = a->total_captured_len - a->current_len + i +
+                                    wstep - a->zc.valid_len;
+          /* check if voice/noise status has been kept for the entire cycle
+           * buffer */
+          if (fvad_last_result == fv) {
+            fvad_cont_count += wstep;
+            /* also keep maximum level for the entire cycle buffer */
+            if (fvad_level_max < a->zc.level)
+              fvad_level_max = a->zc.level;
+          } else {
+            fvad_cont_count = wstep;
+            fvad_level_max = a->zc.level;
+          }
+          fvad_last_result = fv;
+
+          if (a->zc.level > recog->jconf->detect.agc.overflow_thres &&
+              fvad_cont_count > a->c_length) {
+            /* detect input overflow at last chunk, immediately reduce the scale
+             * under the cap */
+            if (verbose_flag)
+              jlog("STAT: AGC: too loud (>%d)\n",
+                   recog->jconf->detect.agc.overflow_thres);
+            zc = update_audio_scale(
+                recog,
+                (float)recog->adin->level_coef *
+                    recog->jconf->detect.agc.scale_down_overflow_rate,
+                total_processed_len);
+            /* update max after scaling */
+            fvad_level_max *= recog->jconf->detect.agc.scale_down_overflow_rate;
+            /* does not reset detection, continues */
+          }
+          if (fv == TRUE && fvad_cont_count > a->c_length) {
+            /* voice segment of a certain length found */
+            if (fvad_first_time == 0) {
+              fvad_first_time = 1;
+              /* this is first time: if amplitude is below level threshold,
+               * immediately raise the scale to go over the threshold */
+              scale = recog->jconf->detect.agc.level_factor_first * a->thres /
+                      fvad_level_max;
+              if (scale > 1.0f) {
+                /* set new scale */
+                if (verbose_flag)
+                  jlog("STAT: AGC: first speech segment, force adjustment\n");
+                if (scale > recog->jconf->detect.agc.scale_max)
+                  scale = recog->jconf->detect.agc.scale_max;
+                fvad_first_rate = scale;
+                zc = update_audio_scale(recog, scale, total_processed_len);
+                /* update max after scaling */
+                if (fvad_level_max < a->zc.level)
+                  fvad_level_max = a->zc.level;
+              }
+            } else if (fvad_level_max < a->thres) {
+              /* too low amplitude of the voice part, increase scale gradually
+               */
+              if (fvad_first_time == 1 &&
+                  recog->adin->level_coef >=
+                      fvad_first_rate *
+                          recog->jconf->detect.agc.scale_max_relative_first) {
+                fvad_cont_count = 0;
+              } else {
+                scale = recog->adin->level_coef *
+                        recog->jconf->detect.agc.scale_up_rate;
+                if (scale > recog->jconf->detect.agc.scale_max)
+                  scale = recog->jconf->detect.agc.scale_max;
+                if (fvad_first_time == 1 &&
+                    scale >
+                        fvad_first_rate *
+                            recog->jconf->detect.agc.scale_max_relative_first) {
+                  scale = fvad_first_rate *
+                          recog->jconf->detect.agc.scale_max_relative_first;
                 }
+                zc = update_audio_scale(recog, scale, total_processed_len);
+                /* update max after scaling */
+                if (fvad_level_max < a->zc.level)
+                  fvad_level_max = a->zc.level;
+              }
             }
+            /* reset detection */
+            fvad_cont_count = 0;
+          }
+          if (fv == FALSE && fvad_cont_count > a->c_length) {
+            /* noise segment of a certain length found */
+            if (fvad_level_max > a->thres) {
+              /* mis-detecting long noise as speech, decrease scale gradually */
+              scale = recog->adin->level_coef *
+                      recog->jconf->detect.agc.scale_down_rate;
+              if (scale <= 0.0) {
+                if (verbose_flag)
+                  jlog("STAT: AGC: too small scale %f, ignored\n", scale);
+              } else {
+                zc = update_audio_scale(recog, scale, total_processed_len);
+                /* update max after scaling */
+                fvad_level_max *= recog->jconf->detect.agc.scale_down_rate;
+              }
+            }
+            /* reset detection */
+            fvad_cont_count = 0;
+          }
         }
+#endif /* HAVE_LIBFVAD */
+        if (
+#ifdef HAVE_LIBFVAD
+            /* trigger when both libfvad and julius VAD are triggered */
+            /* process input in libfvad and get VAD result */
+            fv == TRUE &&
+#endif                                 /* HAVE_LIBFVAD */
+            zc > a->noise_zerocross) { /* now triggering */
 
-        /***********************************************************************/
-        /* if no data has got but not end of stream, repeat next input samples */
-        /***********************************************************************/
-        if (a->current_len == 0) continue;
-
-        /* When not adin_cut mode, all incoming data is valid.
-           So is_valid_data should be set to TRUE when some input first comes
-           till this input ends.  So, if some data comes, set is_valid_data to
-           TRUE here. */
-        if (!a->adin_cut_on && a->is_valid_data == FALSE && a->current_len > 0) {
-            a->is_valid_data = TRUE;
+          if (a->is_valid_data == FALSE) {
+            /*****************************************************/
+            /* process off, trigger on: detect speech triggering */
+            /*****************************************************/
+            a->is_valid_data = TRUE; /* start processing */
+            a->nc = 0;
+#ifdef THREAD_DEBUG
+            jlog("DEBUG: detect on\n");
+#endif
+            /* record time */
+            a->last_trigger_sample = a->total_captured_len - a->current_len +
+                                     i + wstep - a->zc.valid_len;
             callback_exec(CALLBACK_EVENT_SPEECH_START, recog);
-        }
+            a->last_trigger_len = 0;
+            if (a->zc.valid_len > wstep) {
+              a->last_trigger_len += a->zc.valid_len - wstep;
+            }
 
-        /******************************************************/
-        /* prepare for processing samples in temporary buffer */
-        /******************************************************/
-
-        wstep = a->chunk_size;	/* process unit (should be smaller than cycle buffer) */
-
-        /* imax: total length that should be processed at one ad_read() call */
-        /* if in real-time mode and not threaded, recognition process
-           will be called and executed as the ad_process() callback within
-           this function.  If the recognition speed is over the real time,
-           processing all the input samples at the loop below may result in the
-           significant delay of getting next input, that may result in the buffer
-           overflow of the device (namely a microphone device will suffer from
-           this). So, in non-threaded mode, in order to avoid buffer overflow and
-           input frame dropping, we will leave here by processing
-           only one segment [0..wstep], and leave the rest in the temporary buffer.
-        */
+            /****************************************/
+            /* flush samples stored in cycle buffer */
+            /****************************************/
+            /* (last (head_margin) msec samples */
+            /* if threaded mode, processing means storing them to speech[].
+               if ignore_speech_while_recog is on (default), ignore the data
+               if transfer is offline (=while processing second pass).
+               Else, datas are stored even if transfer is offline */
+            if (ad_process != NULL
 #ifdef HAVE_PTHREAD
-        if (a->enable_thread) imax = a->current_len; /* process whole */
-        else imax = (a->current_len < wstep) ? a->current_len : wstep; /* one step */
-#else
-        imax = (a->current_len < wstep) ? a->current_len : wstep;	/* one step */
+                && (!a->enable_thread || !a->ignore_speech_while_recog ||
+                    transfer_online_local)
 #endif
-
-        /* wstep: unit length for the loop below */
-        if (wstep > a->current_len) wstep = a->current_len;
-
+            ) {
+              /* copy content of cycle buffer to cbuf */
+              zc_copy_buffer(&(a->zc), a->cbuf, &len);
+              /* Note that the last 'wstep' samples are the same as
+              the current samples 'buffer[i..i+wstep]', and
+               they will be processed later.  So, here only the samples
+               cbuf[0...len-wstep] will be processed
+                  */
+              if (len - wstep > 0) {
 #ifdef THREAD_DEBUG
-        jlog("DEBUG: process %d samples by %d step\n", imax, wstep);
-#endif
-
-#ifdef HAVE_PTHREAD
-        if (a->enable_thread) {
-            /* get transfer status to local */
-            pthread_mutex_lock(&(a->mutex));
-            transfer_online_local = a->transfer_online;
-            pthread_mutex_unlock(&(a->mutex));
-        }
-#endif
-
-        /*********************************************************/
-        /* start processing buffer[0..current_len] by wstep step */
-        /*********************************************************/
-        i = 0;
-        while (i + wstep <= imax) {
-
-            if (a->adin_cut_on) {
-
-                /********************/
-                /* check triggering */
-                /********************/
-                /* the cycle buffer in count_zc_e() holds the last
-                   samples of (head_margin) miliseconds, and the zerocross
-                   over the threshold level are counted within the cycle buffer */
-
-                /* store the new data to cycle buffer and update the count */
-                /* return zero-cross num in the cycle buffer */
-                zc = count_zc_e(&(a->zc), &(a->buffer[i]), wstep);
-
-#ifdef HAVE_LIBFVAD
-                /*********************/
-                /* auto gain control */
-                /*********************/
-
-                /* get voice/noise status from fvad */
-                fv = fvad_proceed(a, &(a->buffer[i]), wstep);
-                if (a->fvad && recog->jconf->detect.auto_gain_control_flag) {
-                    float scale;
-                    int total_processed_len = a->total_captured_len - a->current_len + i + wstep - a->zc.valid_len;
-                    /* check if voice/noise status has been kept for the entire cycle buffer */
-                    if (fvad_last_result == fv) {
-                        fvad_cont_count += wstep;
-                        /* also keep maximum level for the entire cycle buffer */
-                        if (fvad_level_max < a->zc.level) fvad_level_max = a->zc.level;
-                    } else {
-                        fvad_cont_count = wstep;
-                        fvad_level_max = a->zc.level;
-                    }
-                    fvad_last_result = fv;
-
-                    if (a->zc.level > recog->jconf->detect.agc.overflow_thres && fvad_cont_count > a->c_length) {
-                        /* detect input overflow at last chunk, immediately reduce the scale under the cap */
-                        if (verbose_flag) jlog("STAT: AGC: too loud (>%d)\n", recog->jconf->detect.agc.overflow_thres);
-                        zc = update_audio_scale(recog, (float)recog->adin->level_coef * recog->jconf->detect.agc.scale_down_overflow_rate, total_processed_len);
-                        /* update max after scaling */
-                        fvad_level_max *= recog->jconf->detect.agc.scale_down_overflow_rate;
-                        /* does not reset detection, continues */
-                    }
-                    if (fv == TRUE && fvad_cont_count > a->c_length) {
-                        /* voice segment of a certain length found */
-                        if (fvad_first_time == 0) {
-                            fvad_first_time = 1;
-                            /* this is first time: if amplitude is below level threshold, immediately raise the scale to go over the threshold */
-                            scale = recog->jconf->detect.agc.level_factor_first  * a->thres / fvad_level_max;
-                            if (scale > 1.0f) {
-                                /* set new scale */
-                                if (verbose_flag) jlog("STAT: AGC: first speech segment, force adjustment\n");
-                                if (scale > recog->jconf->detect.agc.scale_max) scale = recog->jconf->detect.agc.scale_max;
-                                fvad_first_rate = scale;
-                                zc = update_audio_scale(recog, scale, total_processed_len);
-                                /* update max after scaling */
-                                if (fvad_level_max < a->zc.level) fvad_level_max = a->zc.level;
-                            }
-                        } else if (fvad_level_max < a->thres) {
-                            /* too low amplitude of the voice part, increase scale gradually */
-                            if (fvad_first_time == 1 && recog->adin->level_coef >= fvad_first_rate * recog->jconf->detect.agc.scale_max_relative_first) {
-                                fvad_cont_count = 0;
-                            } else {
-                                scale = recog->adin->level_coef * recog->jconf->detect.agc.scale_up_rate;
-                                if (scale > recog->jconf->detect.agc.scale_max) scale = recog->jconf->detect.agc.scale_max;
-                                if (fvad_first_time == 1 && scale > fvad_first_rate * recog->jconf->detect.agc.scale_max_relative_first) {
-                                    scale = fvad_first_rate * recog->jconf->detect.agc.scale_max_relative_first;
-                                }
-                                zc = update_audio_scale(recog, scale, total_processed_len);
-                                /* update max after scaling */
-                                if (fvad_level_max < a->zc.level) fvad_level_max = a->zc.level;
-                            }
-                        }
-                        /* reset detection */
-                        fvad_cont_count = 0;
-                    }
-                    if (fv == FALSE && fvad_cont_count > a->c_length) {
-                        /* noise segment of a certain length found */
-                        if (fvad_level_max > a->thres) {
-                            /* mis-detecting long noise as speech, decrease scale gradually */
-                            scale = recog->adin->level_coef * recog->jconf->detect.agc.scale_down_rate;
-                            if (scale <= 0.0) {
-                                if (verbose_flag) jlog("STAT: AGC: too small scale %f, ignored\n", scale);
-                            } else {
-                                zc = update_audio_scale(recog, scale, total_processed_len);
-                                /* update max after scaling */
-                                fvad_level_max *= recog->jconf->detect.agc.scale_down_rate;
-                            }
-                        }
-                        /* reset detection */
-                        fvad_cont_count = 0;
-                    }
-                }
-#endif /* HAVE_LIBFVAD */
-                if (
-#ifdef HAVE_LIBFVAD
-                    /* trigger when both libfvad and julius VAD are triggered */
-                    /* process input in libfvad and get VAD result */
-                    fv == TRUE &&
-#endif /* HAVE_LIBFVAD */
-                    zc > a->noise_zerocross) { /* now triggering */
-
-                    if (a->is_valid_data == FALSE) {
-                        /*****************************************************/
-                        /* process off, trigger on: detect speech triggering */
-                        /*****************************************************/
-                        a->is_valid_data = TRUE;   /* start processing */
-                        a->nc = 0;
-#ifdef THREAD_DEBUG
-                        jlog("DEBUG: detect on\n");
-#endif
-                        /* record time */
-                        a->last_trigger_sample = a->total_captured_len - a->current_len + i + wstep - a->zc.valid_len;
-                        callback_exec(CALLBACK_EVENT_SPEECH_START, recog);
-                        a->last_trigger_len = 0;
-                        if (a->zc.valid_len > wstep) {
-                            a->last_trigger_len += a->zc.valid_len - wstep;
-                        }
-
-                        /****************************************/
-                        /* flush samples stored in cycle buffer */
-                        /****************************************/
-                        /* (last (head_margin) msec samples */
-                        /* if threaded mode, processing means storing them to speech[].
-                           if ignore_speech_while_recog is on (default), ignore the data
-                           if transfer is offline (=while processing second pass).
-                           Else, datas are stored even if transfer is offline */
-                        if ( ad_process != NULL
-#ifdef HAVE_PTHREAD
-                                && (!a->enable_thread || !a->ignore_speech_while_recog || transfer_online_local)
-#endif
-                           ) {
-                            /* copy content of cycle buffer to cbuf */
-                            zc_copy_buffer(&(a->zc), a->cbuf, &len);
-                            /* Note that the last 'wstep' samples are the same as
-                            the current samples 'buffer[i..i+wstep]', and
-                             they will be processed later.  So, here only the samples
-                             cbuf[0...len-wstep] will be processed
-                                */
-                            if (len - wstep > 0) {
-#ifdef THREAD_DEBUG
-                                jlog("DEBUG: callback for buffered samples (%d bytes)\n", len - wstep);
+                jlog("DEBUG: callback for buffered samples (%d bytes)\n",
+                     len - wstep);
 #endif
 #ifdef ENABLE_PLUGIN
-                                plugin_exec_adin_triggered(a->cbuf, len - wstep);
+                plugin_exec_adin_triggered(a->cbuf, len - wstep);
 #endif
-                                callback_exec_adin(CALLBACK_ADIN_TRIGGERED, recog, a->cbuf, len - wstep);
-                                ad_process_ret = (*ad_process)(a->cbuf, len - wstep, recog);
-                                switch(ad_process_ret) {
-                                case 1:		/* segmentation notification from process callback */
+                callback_exec_adin(CALLBACK_ADIN_TRIGGERED, recog, a->cbuf,
+                                   len - wstep);
+                ad_process_ret = (*ad_process)(a->cbuf, len - wstep, recog);
+                switch (ad_process_ret) {
+                case 1: /* segmentation notification from process callback */
 #ifdef HAVE_PTHREAD
-                                    if (a->enable_thread) {
-                                        /* in threaded mode, just stop transfer */
-                                        pthread_mutex_lock(&(a->mutex));
-                                        a->transfer_online = transfer_online_local = FALSE;
-                                        pthread_mutex_unlock(&(a->mutex));
-                                    } else {
-                                        /* in non-threaded mode, set end status and exit loop */
-                                        end_status = 2;
-                                        adin_purge(a, i);
-                                        goto break_input;
-                                    }
-                                    break;
-#else
-                                    /* in non-threaded mode, set end status and exit loop */
-                                    end_status = 2;
-                                    adin_purge(a, i);
-                                    goto break_input;
-#endif
-                                case -1:		/* error occured in callback */
-                                    /* set end status and exit loop */
-                                    end_status = -1;
-                                    goto break_input;
-                                }
-                            }
-                        }
-
-                    } else {		/* is_valid_data == TRUE */
-                        /******************************************************/
-                        /* process on, trigger on: we are in a speech segment */
-                        /******************************************************/
-
-                        if (a->nc > 0) {
-
-                            /*************************************/
-                            /* re-triggering in trailing silence */
-                            /*************************************/
-
-#ifdef THREAD_DEBUG
-                            jlog("DEBUG: re-triggered\n");
-#endif
-                            /* reset noise counter */
-                            a->nc = 0;
-
-                            if (a->sblen > 0) {
-                                a->last_trigger_len += a->sblen;
-                            }
-
-#ifdef TMP_FIX_200602
-                            if (ad_process != NULL
-#ifdef HAVE_PTHREAD
-                                    && (!a->enable_thread || !a->ignore_speech_while_recog || transfer_online_local)
-#endif
-                               ) {
-#endif
-
-                                /*************************************************/
-                                /* process swap buffer stored while tail silence */
-                                /*************************************************/
-                                /* In trailing silence, the samples within the tail margin length
-                                will be processed immediately, but samples after the tail
-                                 margin will not be processed, instead stored in swapbuf[].
-                                 If re-triggering occurs while in the trailing silence,
-                                 the swapped samples should be processed now to catch up
-                                 with current input
-                                    */
-                                if (a->sblen > 0) {
-#ifdef THREAD_DEBUG
-                                    jlog("DEBUG: callback for swapped %d samples\n", a->sblen);
-#endif
-#ifdef ENABLE_PLUGIN
-                                    plugin_exec_adin_triggered(a->swapbuf, a->sblen);
-#endif
-                                    callback_exec_adin(CALLBACK_ADIN_TRIGGERED, recog, a->swapbuf, a->sblen);
-                                    ad_process_ret = (*ad_process)(a->swapbuf, a->sblen, recog);
-                                    a->sblen = 0;
-                                    switch(ad_process_ret) {
-                                    case 1:		/* segmentation notification from process callback */
-#ifdef HAVE_PTHREAD
-                                        if (a->enable_thread) {
-                                            /* in threaded mode, just stop transfer */
-                                            pthread_mutex_lock(&(a->mutex));
-                                            a->transfer_online = transfer_online_local = FALSE;
-                                            pthread_mutex_unlock(&(a->mutex));
-                                        } else {
-                                            /* in non-threaded mode, set end status and exit loop */
-                                            end_status = 2;
-                                            adin_purge(a, i);
-                                            goto break_input;
-                                        }
-                                        break;
-#else
-                                        /* in non-threaded mode, set end status and exit loop */
-                                        end_status = 2;
-                                        adin_purge(a, i);
-                                        goto break_input;
-#endif
-                                    case -1:		/* error occured in callback */
-                                        /* set end status and exit loop */
-                                        end_status = -1;
-                                        goto break_input;
-                                    }
-                                }
-#ifdef TMP_FIX_200602
-                            }
-#endif
-                        }
-                    }
-                } else if (a->is_valid_data == TRUE) {
-
-                    /*******************************************************/
-                    /* process on, trigger off: processing tailing silence */
-                    /*******************************************************/
-
-#ifdef THREAD_DEBUG
-                    jlog("DEBUG: TRAILING SILENCE\n");
-#endif
-                    if (a->nc == 0) {
-                        /* start of tail silence: prepare valiables for start swapbuf[] */
-                        a->rest_tail = a->sbsize - a->c_length;
-                        a->sblen = 0;
-#ifdef THREAD_DEBUG
-                        jlog("DEBUG: start tail silence, rest_tail = %d\n", a->rest_tail);
-#endif
-                    }
-
-                    /* increment noise counter */
-                    a->nc++;
-                }
-            }	/* end of triggering handlers */
-
-
-            /********************************************************************/
-            /* process the current segment buffer[i...i+wstep] if process == on */
-            /********************************************************************/
-
-            if (a->adin_cut_on && a->is_valid_data && a->nc > 0 && a->rest_tail == 0) {
-
-                /* The current trailing silence is now longer than the user-
-                   specified tail margin length, so the current samples
-                   should not be processed now.  But if 're-triggering'
-                   occurs in the trailing silence later, they should be processed
-                   then.  So we just store the overed samples in swapbuf[] and
-                   not process them now */
-
-#ifdef THREAD_DEBUG
-                jlog("DEBUG: tail silence over, store to swap buffer (nc=%d, rest_tail=%d, sblen=%d-%d)\n", a->nc, a->rest_tail, a->sblen, a->sblen+wstep);
-#endif
-                if (a->sblen + wstep > a->sbsize) {
-                    jlog("ERROR: adin_cut: swap buffer for re-triggering overflow\n");
-                }
-                memcpy(&(a->swapbuf[a->sblen]), &(a->buffer[i]), wstep * sizeof(SP16));
-                a->sblen += wstep;
-
-            } else {
-
-                /* we are in a normal speech segment (nc == 0), or
-                   trailing silence (shorter than tail margin length) (nc>0,rest_tail>0)
-                   The current trailing silence is shorter than the user-
-                   specified tail margin length, so the current samples
-                   should be processed now as same as the normal speech segment */
-
-#ifdef TMP_FIX_200602
-                if (!a->adin_cut_on || a->is_valid_data == TRUE) {
-#else
-                if(
-                    (!a->adin_cut_on || a->is_valid_data == TRUE)
-#ifdef HAVE_PTHREAD
-                    && (!a->enable_thread || !a->ignore_speech_while_recog || transfer_online_local)
-#endif
-                ) {
-#endif
-                    if (a->nc > 0) {
-                        /* if we are in a trailing silence, decrease the counter to detect
-                         start of swapbuf[] above */
-                        if (a->rest_tail < wstep) a->rest_tail = 0;
-                        else a->rest_tail -= wstep;
-#ifdef THREAD_DEBUG
-                        jlog("DEBUG: %d processed, rest_tail=%d\n", wstep, a->rest_tail);
-#endif
-                    }
-                    a->last_trigger_len += wstep;
-
-#ifdef TMP_FIX_200602
-                    if (ad_process != NULL
-#ifdef HAVE_PTHREAD
-                            && (!a->enable_thread || !a->ignore_speech_while_recog || transfer_online_local)
-#endif
-                       ) {
-
-#else
-                    if ( ad_process != NULL ) {
-#endif
-#ifdef THREAD_DEBUG
-                        jlog("DEBUG: callback for input sample [%d-%d]\n", i, i+wstep);
-#endif
-                        /* call external function */
-#ifdef ENABLE_PLUGIN
-                        plugin_exec_adin_triggered(&(a->buffer[i]), wstep);
-#endif
-                        callback_exec_adin(CALLBACK_ADIN_TRIGGERED, recog, &(a->buffer[i]), wstep);
-                        ad_process_ret = (*ad_process)(&(a->buffer[i]), wstep, recog);
-                        switch(ad_process_ret) {
-                        case 1:		/* segmentation notification from process callback */
-#ifdef HAVE_PTHREAD
-                            if (a->enable_thread) {
-                                /* in threaded mode, just stop transfer */
-                                pthread_mutex_lock(&(a->mutex));
-                                a->transfer_online = transfer_online_local = FALSE;
-                                pthread_mutex_unlock(&(a->mutex));
-                            } else {
-                                /* in non-threaded mode, set end status and exit loop */
-                                adin_purge(a, i+wstep);
-                                end_status = 2;
-                                goto break_input;
-                            }
-                            break;
-#else
-                            /* in non-threaded mode, set end status and exit loop */
-                            adin_purge(a, i+wstep);
-                            end_status = 2;
-                            goto break_input;
-#endif
-                        case -1:		/* error occured in callback */
-                            /* set end status and exit loop */
-                            end_status = -1;
-                            goto break_input;
-                        }
-                    }
-                }
-            }	/* end of current segment processing */
-
-
-            if (a->adin_cut_on && a->is_valid_data && a->nc >= a->nc_max) {
-                /*************************************/
-                /* process on, trailing silence over */
-                /* = end of input segment            */
-                /*************************************/
-#ifdef THREAD_DEBUG
-                jlog("DEBUG: detect off\n");
-#endif
-                /* end input by silence */
-                a->is_valid_data = FALSE;	/* turn off processing */
-                a->sblen = 0;
-                callback_exec(CALLBACK_EVENT_SPEECH_STOP, recog);
-#ifdef HAVE_PTHREAD
-                if (a->enable_thread) { /* just stop transfer */
+                  if (a->enable_thread) {
+                    /* in threaded mode, just stop transfer */
                     pthread_mutex_lock(&(a->mutex));
                     a->transfer_online = transfer_online_local = FALSE;
                     pthread_mutex_unlock(&(a->mutex));
-                } else {
-                    adin_purge(a, i+wstep);
-                    end_status = 1;
+                  } else {
+                    /* in non-threaded mode, set end status and exit loop */
+                    end_status = 2;
+                    adin_purge(a, i);
                     goto break_input;
-                }
+                  }
+                  break;
 #else
-                adin_purge(a, i+wstep);
-                end_status = 1;
-                goto break_input;
+                  /* in non-threaded mode, set end status and exit loop */
+                  end_status = 2;
+                  adin_purge(a, i);
+                  goto break_input;
 #endif
+                case -1: /* error occured in callback */
+                  /* set end status and exit loop */
+                  end_status = -1;
+                  goto break_input;
+                }
+              }
             }
 
-            /*********************************************************/
-            /* end of processing buffer[0..current_len] by wstep step */
-            /*********************************************************/
-            i += wstep;		/* increment to next wstep samples */
+          } else { /* is_valid_data == TRUE */
+            /******************************************************/
+            /* process on, trigger on: we are in a speech segment */
+            /******************************************************/
+
+            if (a->nc > 0) {
+
+              /*************************************/
+              /* re-triggering in trailing silence */
+              /*************************************/
+
+#ifdef THREAD_DEBUG
+              jlog("DEBUG: re-triggered\n");
+#endif
+              /* reset noise counter */
+              a->nc = 0;
+
+              if (a->sblen > 0) {
+                a->last_trigger_len += a->sblen;
+              }
+
+#ifdef TMP_FIX_200602
+              if (ad_process != NULL
+#ifdef HAVE_PTHREAD
+                  && (!a->enable_thread || !a->ignore_speech_while_recog ||
+                      transfer_online_local)
+#endif
+              ) {
+#endif
+
+                /*************************************************/
+                /* process swap buffer stored while tail silence */
+                /*************************************************/
+                /* In trailing silence, the samples within the tail margin
+                length will be processed immediately, but samples after the tail
+                 margin will not be processed, instead stored in swapbuf[].
+                 If re-triggering occurs while in the trailing silence,
+                 the swapped samples should be processed now to catch up
+                 with current input
+                    */
+                if (a->sblen > 0) {
+#ifdef THREAD_DEBUG
+                  jlog("DEBUG: callback for swapped %d samples\n", a->sblen);
+#endif
+#ifdef ENABLE_PLUGIN
+                  plugin_exec_adin_triggered(a->swapbuf, a->sblen);
+#endif
+                  callback_exec_adin(CALLBACK_ADIN_TRIGGERED, recog, a->swapbuf,
+                                     a->sblen);
+                  ad_process_ret = (*ad_process)(a->swapbuf, a->sblen, recog);
+                  a->sblen = 0;
+                  switch (ad_process_ret) {
+                  case 1: /* segmentation notification from process callback */
+#ifdef HAVE_PTHREAD
+                    if (a->enable_thread) {
+                      /* in threaded mode, just stop transfer */
+                      pthread_mutex_lock(&(a->mutex));
+                      a->transfer_online = transfer_online_local = FALSE;
+                      pthread_mutex_unlock(&(a->mutex));
+                    } else {
+                      /* in non-threaded mode, set end status and exit loop */
+                      end_status = 2;
+                      adin_purge(a, i);
+                      goto break_input;
+                    }
+                    break;
+#else
+                  /* in non-threaded mode, set end status and exit loop */
+                  end_status = 2;
+                  adin_purge(a, i);
+                  goto break_input;
+#endif
+                  case -1: /* error occured in callback */
+                    /* set end status and exit loop */
+                    end_status = -1;
+                    goto break_input;
+                  }
+                }
+#ifdef TMP_FIX_200602
+              }
+#endif
+            }
+          }
+        } else if (a->is_valid_data == TRUE) {
+
+          /*******************************************************/
+          /* process on, trigger off: processing tailing silence */
+          /*******************************************************/
+
+#ifdef THREAD_DEBUG
+          jlog("DEBUG: TRAILING SILENCE\n");
+#endif
+          if (a->nc == 0) {
+            /* start of tail silence: prepare valiables for start swapbuf[] */
+            a->rest_tail = a->sbsize - a->c_length;
+            a->sblen = 0;
+#ifdef THREAD_DEBUG
+            jlog("DEBUG: start tail silence, rest_tail = %d\n", a->rest_tail);
+#endif
+          }
+
+          /* increment noise counter */
+          a->nc++;
         }
+      } /* end of triggering handlers */
 
-        /* purge processed samples and update queue */
-        adin_purge(a, i);
+      /********************************************************************/
+      /* process the current segment buffer[i...i+wstep] if process == on */
+      /********************************************************************/
 
+      if (a->adin_cut_on && a->is_valid_data && a->nc > 0 &&
+          a->rest_tail == 0) {
+
+        /* The current trailing silence is now longer than the user-
+           specified tail margin length, so the current samples
+           should not be processed now.  But if 're-triggering'
+           occurs in the trailing silence later, they should be processed
+           then.  So we just store the overed samples in swapbuf[] and
+           not process them now */
+
+#ifdef THREAD_DEBUG
+        jlog("DEBUG: tail silence over, store to swap buffer (nc=%d, "
+             "rest_tail=%d, sblen=%d-%d)\n",
+             a->nc, a->rest_tail, a->sblen, a->sblen + wstep);
+#endif
+        if (a->sblen + wstep > a->sbsize) {
+          jlog("ERROR: adin_cut: swap buffer for re-triggering overflow\n");
+        }
+        memcpy(&(a->swapbuf[a->sblen]), &(a->buffer[i]), wstep * sizeof(SP16));
+        a->sblen += wstep;
+
+      } else {
+
+        /* we are in a normal speech segment (nc == 0), or
+           trailing silence (shorter than tail margin length) (nc>0,rest_tail>0)
+           The current trailing silence is shorter than the user-
+           specified tail margin length, so the current samples
+           should be processed now as same as the normal speech segment */
+
+#ifdef TMP_FIX_200602
+        if (!a->adin_cut_on || a->is_valid_data == TRUE) {
+#else
+        if ((!a->adin_cut_on || a->is_valid_data == TRUE)
+#ifdef HAVE_PTHREAD
+            && (!a->enable_thread || !a->ignore_speech_while_recog ||
+                transfer_online_local)
+#endif
+        ) {
+#endif
+          if (a->nc > 0) {
+            /* if we are in a trailing silence, decrease the counter to detect
+             start of swapbuf[] above */
+            if (a->rest_tail < wstep)
+              a->rest_tail = 0;
+            else
+              a->rest_tail -= wstep;
+#ifdef THREAD_DEBUG
+            jlog("DEBUG: %d processed, rest_tail=%d\n", wstep, a->rest_tail);
+#endif
+          }
+          a->last_trigger_len += wstep;
+
+#ifdef TMP_FIX_200602
+          if (ad_process != NULL
+#ifdef HAVE_PTHREAD
+              && (!a->enable_thread || !a->ignore_speech_while_recog ||
+                  transfer_online_local)
+#endif
+          ) {
+
+#else
+          if (ad_process != NULL) {
+#endif
+#ifdef THREAD_DEBUG
+            jlog("DEBUG: callback for input sample [%d-%d]\n", i, i + wstep);
+#endif
+            /* call external function */
+#ifdef ENABLE_PLUGIN
+            plugin_exec_adin_triggered(&(a->buffer[i]), wstep);
+#endif
+            callback_exec_adin(CALLBACK_ADIN_TRIGGERED, recog, &(a->buffer[i]),
+                               wstep);
+            ad_process_ret = (*ad_process)(&(a->buffer[i]), wstep, recog);
+            switch (ad_process_ret) {
+            case 1: /* segmentation notification from process callback */
+#ifdef HAVE_PTHREAD
+              if (a->enable_thread) {
+                /* in threaded mode, just stop transfer */
+                pthread_mutex_lock(&(a->mutex));
+                a->transfer_online = transfer_online_local = FALSE;
+                pthread_mutex_unlock(&(a->mutex));
+              } else {
+                /* in non-threaded mode, set end status and exit loop */
+                adin_purge(a, i + wstep);
+                end_status = 2;
+                goto break_input;
+              }
+              break;
+#else
+              /* in non-threaded mode, set end status and exit loop */
+              adin_purge(a, i + wstep);
+              end_status = 2;
+              goto break_input;
+#endif
+            case -1: /* error occured in callback */
+              /* set end status and exit loop */
+              end_status = -1;
+              goto break_input;
+            }
+          }
+        }
+      } /* end of current segment processing */
+
+      if (a->adin_cut_on && a->is_valid_data && a->nc >= a->nc_max) {
+        /*************************************/
+        /* process on, trailing silence over */
+        /* = end of input segment            */
+        /*************************************/
+#ifdef THREAD_DEBUG
+        jlog("DEBUG: detect off\n");
+#endif
+        /* end input by silence */
+        a->is_valid_data = FALSE; /* turn off processing */
+        a->sblen = 0;
+        callback_exec(CALLBACK_EVENT_SPEECH_STOP, recog);
+#ifdef HAVE_PTHREAD
+        if (a->enable_thread) { /* just stop transfer */
+          pthread_mutex_lock(&(a->mutex));
+          a->transfer_online = transfer_online_local = FALSE;
+          pthread_mutex_unlock(&(a->mutex));
+        } else {
+          adin_purge(a, i + wstep);
+          end_status = 1;
+          goto break_input;
+        }
+#else
+        adin_purge(a, i + wstep);
+        end_status = 1;
+        goto break_input;
+#endif
+      }
+
+      /*********************************************************/
+      /* end of processing buffer[0..current_len] by wstep step */
+      /*********************************************************/
+      i += wstep; /* increment to next wstep samples */
     }
+
+    /* purge processed samples and update queue */
+    adin_purge(a, i);
+  }
 
 break_input:
 
-    /****************/
-    /* pause input */
-    /****************/
-    if (a->end_of_stream) {			/* input already ends */
-        /* execute callback */
-        callback_exec(CALLBACK_EVENT_SPEECH_STOP, recog);
-        if (a->bp == 0) {		/* rest buffer successfully flushed */
-            /* reset status */
-            a->need_init = TRUE;		/* bufer status shoule be reset at next call */
-        }
-        if (end_status >= 0) {
-            end_status = (a->bp) ? 1 : 0;
-        }
+  /****************/
+  /* pause input */
+  /****************/
+  if (a->end_of_stream) { /* input already ends */
+    /* execute callback */
+    callback_exec(CALLBACK_EVENT_SPEECH_STOP, recog);
+    if (a->bp == 0) { /* rest buffer successfully flushed */
+      /* reset status */
+      a->need_init = TRUE; /* bufer status shoule be reset at next call */
     }
+    if (end_status >= 0) {
+      end_status = (a->bp) ? 1 : 0;
+    }
+  }
 
-    return(end_status);
+  return (end_status);
 }
 
 #ifdef HAVE_PTHREAD
@@ -1148,28 +1213,26 @@ break_input:
  *
  * @return always 0, to tell caller to just continue the input
  */
-static int
-adin_store_buffer(SP16 *now, int len, Recog *recog)
-{
-    ADIn *a;
+static int adin_store_buffer(SP16 *now, int len, Recog *recog) {
+  ADIn *a;
 
-    a = recog->adin;
-    if (a->speechlen + len > MAXSPEECHLEN) {
-        /* just mark as overflowed, and continue this thread */
-        pthread_mutex_lock(&(a->mutex));
-        a->adinthread_buffer_overflowed = TRUE;
-        pthread_mutex_unlock(&(a->mutex));
-        return(0);
-    }
+  a = recog->adin;
+  if (a->speechlen + len > MAXSPEECHLEN) {
+    /* just mark as overflowed, and continue this thread */
     pthread_mutex_lock(&(a->mutex));
-    memcpy(&(a->speech[a->speechlen]), now, len * sizeof(SP16));
-    a->speechlen += len;
+    a->adinthread_buffer_overflowed = TRUE;
     pthread_mutex_unlock(&(a->mutex));
+    return (0);
+  }
+  pthread_mutex_lock(&(a->mutex));
+  memcpy(&(a->speech[a->speechlen]), now, len * sizeof(SP16));
+  a->speechlen += len;
+  pthread_mutex_unlock(&(a->mutex));
 #ifdef THREAD_DEBUG
-    jlog("DEBUG: input: stored %d samples, total=%d\n", len, a->speechlen);
+  jlog("DEBUG: input: stored %d samples, total=%d\n", len, a->speechlen);
 #endif
 
-    return(0);			/* continue */
+  return (0); /* continue */
 }
 
 /**
@@ -1182,26 +1245,24 @@ adin_store_buffer(SP16 *now, int len, Recog *recog)
  *
  * @param dummy [in] a dummy data, not used.
  */
-static void
-adin_thread_input_main(void *dummy)
-{
-    Recog *recog;
-    int ret;
+static void adin_thread_input_main(void *dummy) {
+  Recog *recog;
+  int ret;
 
-    recog = dummy;
+  recog = dummy;
 
-    ret = adin_cut(adin_store_buffer, NULL, recog);
+  ret = adin_cut(adin_store_buffer, NULL, recog);
 
-    if (ret == -2) {		/* termination request by ad_check? */
-        jlog("Error: adin thread exit with termination request by checker\n");
-    } else if (ret == -1) {	/* error */
-        jlog("Error: adin thread exit with error\n");
-    } else if (ret == 0) {	/* EOF */
-        jlog("Stat: adin thread end with EOF\n");
-    }
-    recog->adin->adinthread_ended = TRUE;
+  if (ret == -2) { /* termination request by ad_check? */
+    jlog("Error: adin thread exit with termination request by checker\n");
+  } else if (ret == -1) { /* error */
+    jlog("Error: adin thread exit with error\n");
+  } else if (ret == 0) { /* EOF */
+    jlog("Stat: adin thread end with EOF\n");
+  }
+  recog->adin->adinthread_ended = TRUE;
 
-    /* return to end this thread */
+  /* return to end this thread */
 }
 
 /**
@@ -1216,35 +1277,35 @@ adin_thread_input_main(void *dummy)
  * @callergraph
  * @callgraph
  */
-boolean
-adin_thread_create(Recog *recog)
-{
-    ADIn *a;
+boolean adin_thread_create(Recog *recog) {
+  ADIn *a;
 
-    a = recog->adin;
+  a = recog->adin;
 
-    /* init storing buffer */
-    a->speech = (SP16 *)mymalloc(sizeof(SP16) * MAXSPEECHLEN);
-    a->speechlen = 0;
+  /* init storing buffer */
+  a->speech = (SP16 *)mymalloc(sizeof(SP16) * MAXSPEECHLEN);
+  a->speechlen = 0;
 
-    a->transfer_online = FALSE; /* tell adin-mic thread to wait at initial */
-    a->adinthread_buffer_overflowed = FALSE;
-    a->adinthread_ended = FALSE;
+  a->transfer_online = FALSE; /* tell adin-mic thread to wait at initial */
+  a->adinthread_buffer_overflowed = FALSE;
+  a->adinthread_ended = FALSE;
 
-    if (pthread_mutex_init(&(a->mutex), NULL) != 0) { /* error */
-        jlog("ERROR: adin_thread_create: failed to initialize mutex\n");
-        return FALSE;
-    }
-    if (pthread_create(&(recog->adin->adin_thread), NULL, (void *)adin_thread_input_main, recog) != 0) {
-        jlog("ERROR: adin_thread_create: failed to create AD-in thread\n");
-        return FALSE;
-    }
-    if (pthread_detach(recog->adin->adin_thread) != 0) { /* not join, run forever */
-        jlog("ERROR: adin_thread_create: failed to detach AD-in thread\n");
-        return FALSE;
-    }
-    jlog("STAT: AD-in thread created\n");
-    return TRUE;
+  if (pthread_mutex_init(&(a->mutex), NULL) != 0) { /* error */
+    jlog("ERROR: adin_thread_create: failed to initialize mutex\n");
+    return FALSE;
+  }
+  if (pthread_create(&(recog->adin->adin_thread), NULL,
+                     (void *)adin_thread_input_main, recog) != 0) {
+    jlog("ERROR: adin_thread_create: failed to create AD-in thread\n");
+    return FALSE;
+  }
+  if (pthread_detach(recog->adin->adin_thread) !=
+      0) { /* not join, run forever */
+    jlog("ERROR: adin_thread_create: failed to detach AD-in thread\n");
+    return FALSE;
+  }
+  jlog("STAT: AD-in thread created\n");
+  return TRUE;
 }
 
 /**
@@ -1259,49 +1320,48 @@ adin_thread_create(Recog *recog)
  * @callergraph
  * @callgraph
  */
-boolean
-adin_thread_cancel(Recog *recog)
-{
-    int ret;
+boolean adin_thread_cancel(Recog *recog) {
+  int ret;
 
-    if (recog->adin->adinthread_ended) return TRUE;
-
-    /* send a cencellation request to the A/D-in thread */
-    ret = pthread_cancel(recog->adin->adin_thread);
-    if (ret != 0) {
-        if (ret == ESRCH) {
-            jlog("STAT: adin_thread_cancel: no A/D-in thread\n");
-            recog->adin->adinthread_ended = TRUE;
-            return TRUE;
-        } else {
-            jlog("Error: adin_thread_cancel: failed to cancel A/D-in thread\n");
-            return FALSE;
-        }
-    }
-    /* wait for the thread to terminate */
-    ret = pthread_join(recog->adin->adin_thread, NULL);
-    if (ret != 0) {
-        if (ret == EINVAL) {
-            jlog("InternalError: adin_thread_cancel: AD-in thread is invalid\n");
-            recog->adin->adinthread_ended = TRUE;
-            return FALSE;
-        } else if (ret == ESRCH) {
-            jlog("STAT: adin_thread_cancel: no A/D-in thread\n");
-            recog->adin->adinthread_ended = TRUE;
-            return TRUE;
-        } else if (ret == EDEADLK) {
-            jlog("InternalError: adin_thread_cancel: dead lock or self thread?\n");
-            recog->adin->adinthread_ended = TRUE;
-            return FALSE;
-        } else {
-            jlog("Error: adin_thread_cancel: failed to wait end of A/D-in thread\n");
-            return FALSE;
-        }
-    }
-
-    jlog("STAT: AD-in thread deleted\n");
-    recog->adin->adinthread_ended = TRUE;
+  if (recog->adin->adinthread_ended)
     return TRUE;
+
+  /* send a cencellation request to the A/D-in thread */
+  ret = pthread_cancel(recog->adin->adin_thread);
+  if (ret != 0) {
+    if (ret == ESRCH) {
+      jlog("STAT: adin_thread_cancel: no A/D-in thread\n");
+      recog->adin->adinthread_ended = TRUE;
+      return TRUE;
+    } else {
+      jlog("Error: adin_thread_cancel: failed to cancel A/D-in thread\n");
+      return FALSE;
+    }
+  }
+  /* wait for the thread to terminate */
+  ret = pthread_join(recog->adin->adin_thread, NULL);
+  if (ret != 0) {
+    if (ret == EINVAL) {
+      jlog("InternalError: adin_thread_cancel: AD-in thread is invalid\n");
+      recog->adin->adinthread_ended = TRUE;
+      return FALSE;
+    } else if (ret == ESRCH) {
+      jlog("STAT: adin_thread_cancel: no A/D-in thread\n");
+      recog->adin->adinthread_ended = TRUE;
+      return TRUE;
+    } else if (ret == EDEADLK) {
+      jlog("InternalError: adin_thread_cancel: dead lock or self thread?\n");
+      recog->adin->adinthread_ended = TRUE;
+      return FALSE;
+    } else {
+      jlog("Error: adin_thread_cancel: failed to wait end of A/D-in thread\n");
+      return FALSE;
+    }
+  }
+
+  jlog("STAT: AD-in thread deleted\n");
+  recog->adin->adinthread_ended = TRUE;
+  return TRUE;
 }
 
 /****************************/
@@ -1332,136 +1392,140 @@ adin_thread_cancel(Recog *recog)
  * trigger), 0 when reached end of input device, -1 on error, -2 when
  * input termination requested by ad_check().
  */
-static int
-adin_thread_process(int (*ad_process)(SP16 *, int, Recog *), int (*ad_check)(Recog *), Recog *recog)
-{
-    int prev_len, nowlen;
-    int ad_process_ret;
-    int i;
-    boolean overflowed_p;
-    boolean transfer_online_local;
-    boolean ended_p;
-    ADIn *a;
+static int adin_thread_process(int (*ad_process)(SP16 *, int, Recog *),
+                               int (*ad_check)(Recog *), Recog *recog) {
+  int prev_len, nowlen;
+  int ad_process_ret;
+  int i;
+  boolean overflowed_p;
+  boolean transfer_online_local;
+  boolean ended_p;
+  ADIn *a;
 
-    a = recog->adin;
+  a = recog->adin;
 
-    /* reset storing buffer --- input while recognition will be ignored */
+  /* reset storing buffer --- input while recognition will be ignored */
+  pthread_mutex_lock(&(a->mutex));
+  /*if (speechlen == 0) transfer_online = TRUE;*/ /* tell adin-mic thread to
+                                                     start recording */
+  a->transfer_online = TRUE;
+#ifdef THREAD_DEBUG
+  jlog("DEBUG: process: reset, speechlen = %d, online=%d\n", a->speechlen,
+       a->transfer_online);
+#endif
+  a->adinthread_buffer_overflowed = FALSE;
+  pthread_mutex_unlock(&(a->mutex));
+
+  /* main processing loop */
+  prev_len = 0;
+  for (;;) {
+    /* get current length (locking) */
     pthread_mutex_lock(&(a->mutex));
-    /*if (speechlen == 0) transfer_online = TRUE;*/ /* tell adin-mic thread to start recording */
-    a->transfer_online = TRUE;
-#ifdef THREAD_DEBUG
-    jlog("DEBUG: process: reset, speechlen = %d, online=%d\n", a->speechlen, a->transfer_online);
-#endif
-    a->adinthread_buffer_overflowed = FALSE;
+    nowlen = a->speechlen;
+    overflowed_p = a->adinthread_buffer_overflowed;
+    transfer_online_local = a->transfer_online;
+    ended_p = a->adinthread_ended;
     pthread_mutex_unlock(&(a->mutex));
-
-    /* main processing loop */
-    prev_len = 0;
-    for(;;) {
-        /* get current length (locking) */
-        pthread_mutex_lock(&(a->mutex));
-        nowlen = a->speechlen;
-        overflowed_p = a->adinthread_buffer_overflowed;
-        transfer_online_local = a->transfer_online;
-        ended_p = a->adinthread_ended;
-        pthread_mutex_unlock(&(a->mutex));
-        /* check if thread is alive */
-        if (ended_p) {
-            /* adin thread has already exited, so return EOF to stop this input */
-            return(0);
-        }
-        /* check if other input thread has overflowed */
-        if (overflowed_p) {
-            jlog("WARNING: adin_thread_process: too long input (> %d samples), segmented now\n", MAXSPEECHLEN);
-            /* segment input here */
-            pthread_mutex_lock(&(a->mutex));
-            a->speechlen = 0;
-            a->transfer_online = transfer_online_local = FALSE;
-            pthread_mutex_unlock(&(a->mutex));
-            return(1);		/* return with segmented status */
-        }
-        /* callback poll */
-        if (ad_check != NULL) {
-            if ((i = (*(ad_check))(recog)) < 0) {
-                if ((i == -1 && nowlen == 0) || i == -2) {
-                    pthread_mutex_lock(&(a->mutex));
-                    a->transfer_online = transfer_online_local = FALSE;
-                    a->speechlen = 0;
-                    pthread_mutex_unlock(&(a->mutex));
-                    return(-2);
-                }
-            }
-        }
-        if (prev_len < nowlen && nowlen <= a->freezelen) {
-#ifdef THREAD_DEBUG
-            jlog("DEBUG: process: proceed [%d-%d]\n",prev_len, nowlen);
-#endif
-            /* got new sample, process */
-            /* As the speech[] buffer is monotonously increase,
-            content of speech buffer [prev_len..nowlen] would not alter
-             in both threads
-             So locking is not needed while processing.
-                 */
-            /*jlog("DEBUG: main: read %d-%d\n", prev_len, nowlen);*/
-            if (ad_process != NULL) {
-                ad_process_ret = (*ad_process)(&(a->speech[prev_len]), nowlen - prev_len, recog);
-#ifdef THREAD_DEBUG
-                jlog("DEBUG: ad_process_ret=%d\n", ad_process_ret);
-#endif
-                switch(ad_process_ret) {
-                case 1:			/* segmented */
-                    /* segmented by callback function */
-                    /* purge processed samples and keep transfering */
-                    pthread_mutex_lock(&(a->mutex));
-                    if(a->speechlen > nowlen) {
-                        memmove(a->speech, &(a->speech[nowlen]), (a->speechlen - nowlen) * sizeof(SP16));
-                        a->speechlen -= nowlen;
-                    } else {
-                        a->speechlen = 0;
-                    }
-                    a->transfer_online = transfer_online_local = FALSE;
-                    pthread_mutex_unlock(&(a->mutex));
-                    /* keep transfering */
-                    return(2);		/* return with segmented status */
-                case -1:		/* error */
-                    pthread_mutex_lock(&(a->mutex));
-                    a->transfer_online = transfer_online_local = FALSE;
-                    pthread_mutex_unlock(&(a->mutex));
-                    return(-1);		/* return with error */
-                }
-            }
-            if (a->rehash) {
-                /* rehash */
-                pthread_mutex_lock(&(a->mutex));
-                if (debug2_flag) jlog("STAT: adin_cut: rehash from %d to %d\n", a->speechlen, a->speechlen - prev_len);
-                a->speechlen -= prev_len;
-                nowlen -= prev_len;
-                memmove(a->speech, &(a->speech[prev_len]), a->speechlen * sizeof(SP16));
-                pthread_mutex_unlock(&(a->mutex));
-                a->rehash = FALSE;
-            }
-            prev_len = nowlen;
-        } else {
-            if (transfer_online_local == FALSE) {
-                /* segmented by zero-cross */
-                /* reset storing buffer for next input */
-                pthread_mutex_lock(&(a->mutex));
-                a->speechlen = 0;
-                pthread_mutex_unlock(&(a->mutex));
-                break;
-            }
-            usleep(50000);   /* wait = 0.05sec*/
-        }
+    /* check if thread is alive */
+    if (ended_p) {
+      /* adin thread has already exited, so return EOF to stop this input */
+      return (0);
     }
+    /* check if other input thread has overflowed */
+    if (overflowed_p) {
+      jlog("WARNING: adin_thread_process: too long input (> %d samples), "
+           "segmented now\n",
+           MAXSPEECHLEN);
+      /* segment input here */
+      pthread_mutex_lock(&(a->mutex));
+      a->speechlen = 0;
+      a->transfer_online = transfer_online_local = FALSE;
+      pthread_mutex_unlock(&(a->mutex));
+      return (1); /* return with segmented status */
+    }
+    /* callback poll */
+    if (ad_check != NULL) {
+      if ((i = (*(ad_check))(recog)) < 0) {
+        if ((i == -1 && nowlen == 0) || i == -2) {
+          pthread_mutex_lock(&(a->mutex));
+          a->transfer_online = transfer_online_local = FALSE;
+          a->speechlen = 0;
+          pthread_mutex_unlock(&(a->mutex));
+          return (-2);
+        }
+      }
+    }
+    if (prev_len < nowlen && nowlen <= a->freezelen) {
+#ifdef THREAD_DEBUG
+      jlog("DEBUG: process: proceed [%d-%d]\n", prev_len, nowlen);
+#endif
+      /* got new sample, process */
+      /* As the speech[] buffer is monotonously increase,
+      content of speech buffer [prev_len..nowlen] would not alter
+       in both threads
+       So locking is not needed while processing.
+           */
+      /*jlog("DEBUG: main: read %d-%d\n", prev_len, nowlen);*/
+      if (ad_process != NULL) {
+        ad_process_ret =
+            (*ad_process)(&(a->speech[prev_len]), nowlen - prev_len, recog);
+#ifdef THREAD_DEBUG
+        jlog("DEBUG: ad_process_ret=%d\n", ad_process_ret);
+#endif
+        switch (ad_process_ret) {
+        case 1: /* segmented */
+          /* segmented by callback function */
+          /* purge processed samples and keep transfering */
+          pthread_mutex_lock(&(a->mutex));
+          if (a->speechlen > nowlen) {
+            memmove(a->speech, &(a->speech[nowlen]),
+                    (a->speechlen - nowlen) * sizeof(SP16));
+            a->speechlen -= nowlen;
+          } else {
+            a->speechlen = 0;
+          }
+          a->transfer_online = transfer_online_local = FALSE;
+          pthread_mutex_unlock(&(a->mutex));
+          /* keep transfering */
+          return (2); /* return with segmented status */
+        case -1:      /* error */
+          pthread_mutex_lock(&(a->mutex));
+          a->transfer_online = transfer_online_local = FALSE;
+          pthread_mutex_unlock(&(a->mutex));
+          return (-1); /* return with error */
+        }
+      }
+      if (a->rehash) {
+        /* rehash */
+        pthread_mutex_lock(&(a->mutex));
+        if (debug2_flag)
+          jlog("STAT: adin_cut: rehash from %d to %d\n", a->speechlen,
+               a->speechlen - prev_len);
+        a->speechlen -= prev_len;
+        nowlen -= prev_len;
+        memmove(a->speech, &(a->speech[prev_len]), a->speechlen * sizeof(SP16));
+        pthread_mutex_unlock(&(a->mutex));
+        a->rehash = FALSE;
+      }
+      prev_len = nowlen;
+    } else {
+      if (transfer_online_local == FALSE) {
+        /* segmented by zero-cross */
+        /* reset storing buffer for next input */
+        pthread_mutex_lock(&(a->mutex));
+        a->speechlen = 0;
+        pthread_mutex_unlock(&(a->mutex));
+        break;
+      }
+      usleep(50000); /* wait = 0.05sec*/
+    }
+  }
 
-    /* as threading assumes infinite input */
-    /* return value should be 1 (segmented) */
-    return(1);
+  /* as threading assumes infinite input */
+  /* return value should be 1 (segmented) */
+  return (1);
 }
 #endif /* HAVE_PTHREAD */
-
-
-
 
 /**
  * <EN>
@@ -1496,17 +1560,16 @@ adin_thread_process(int (*ad_process)(SP16 *, int, Recog *), int (*ad_check)(Rec
  * @callgraph
  *
  */
-int
-adin_go(int (*ad_process)(SP16 *, int, Recog *), int (*ad_check)(Recog *), Recog *recog)
-{
-    /* output listening start message */
-    callback_exec(CALLBACK_EVENT_SPEECH_READY, recog);
+int adin_go(int (*ad_process)(SP16 *, int, Recog *), int (*ad_check)(Recog *),
+            Recog *recog) {
+  /* output listening start message */
+  callback_exec(CALLBACK_EVENT_SPEECH_READY, recog);
 #ifdef HAVE_PTHREAD
-    if (recog->adin->enable_thread) {
-        return(adin_thread_process(ad_process, ad_check, recog));
-    }
+  if (recog->adin->enable_thread) {
+    return (adin_thread_process(ad_process, ad_check, recog));
+  }
 #endif
-    return(adin_cut(ad_process, ad_check, recog));
+  return (adin_cut(ad_process, ad_check, recog));
 }
 
 /**
@@ -1527,12 +1590,12 @@ adin_go(int (*ad_process)(SP16 *, int, Recog *), int (*ad_check)(Recog *), Recog
  * @callgraph
  *
  */
-boolean
-adin_standby(ADIn *a, int freq, void *arg)
-{
-    if (a->need_zmean) zmean_reset();
-    if (a->ad_standby != NULL) return(a->ad_standby(freq, arg));
-    return TRUE;
+boolean adin_standby(ADIn *a, int freq, void *arg) {
+  if (a->need_zmean)
+    zmean_reset();
+  if (a->ad_standby != NULL)
+    return (a->ad_standby(freq, arg));
+  return TRUE;
 }
 /**
  * <EN>
@@ -1551,17 +1614,18 @@ adin_standby(ADIn *a, int freq, void *arg)
  * @callgraph
  *
  */
-boolean
-adin_begin(ADIn *a, char *file_or_dev_name)
-{
-    if (debug2_flag && a->input_side_segment) jlog("Stat: adin_begin: skip\n");
-    if (a->input_side_segment == FALSE) {
-        a->total_captured_len = 0;
-        a->last_trigger_len = 0;
-        if (a->need_zmean) zmean_reset();
-        if (a->ad_begin != NULL) return(a->ad_begin(file_or_dev_name));
-    }
-    return TRUE;
+boolean adin_begin(ADIn *a, char *file_or_dev_name) {
+  if (debug2_flag && a->input_side_segment)
+    jlog("Stat: adin_begin: skip\n");
+  if (a->input_side_segment == FALSE) {
+    a->total_captured_len = 0;
+    a->last_trigger_len = 0;
+    if (a->need_zmean)
+      zmean_reset();
+    if (a->ad_begin != NULL)
+      return (a->ad_begin(file_or_dev_name));
+  }
+  return TRUE;
 }
 /**
  * <EN>
@@ -1578,14 +1642,14 @@ adin_begin(ADIn *a, char *file_or_dev_name)
  * @callergraph
  * @callgraph
  */
-boolean
-adin_end(ADIn *a)
-{
-    if (debug2_flag && a->input_side_segment) jlog("Stat: adin_end: skip\n");
-    if (a->input_side_segment == FALSE) {
-        if (a->ad_end != NULL) return(a->ad_end());
-    }
-    return TRUE;
+boolean adin_end(ADIn *a) {
+  if (debug2_flag && a->input_side_segment)
+    jlog("Stat: adin_end: skip\n");
+  if (a->input_side_segment == FALSE) {
+    if (a->ad_end != NULL)
+      return (a->ad_end());
+  }
+  return TRUE;
 }
 
 /**
@@ -1602,34 +1666,33 @@ adin_end(ADIn *a)
  * @callgraph
  *
  */
-void
-adin_free_param(Recog *recog)
-{
-    ADIn *a;
+void adin_free_param(Recog *recog) {
+  ADIn *a;
 
-    a = recog->adin;
+  a = recog->adin;
 
-    if (a->ds) {
-        ds48to16_free(a->ds);
-        a->ds = NULL;
-    }
-    if (a->adin_cut_on) {
-        free_count_zc_e(&(a->zc));
-    }
-    if (a->down_sample) {
-        free(a->buffer48);
-    }
-    free(a->swapbuf);
-    free(a->cbuf);
-    free(a->buffer);
+  if (a->ds) {
+    ds48to16_free(a->ds);
+    a->ds = NULL;
+  }
+  if (a->adin_cut_on) {
+    free_count_zc_e(&(a->zc));
+  }
+  if (a->down_sample) {
+    free(a->buffer48);
+  }
+  free(a->swapbuf);
+  free(a->cbuf);
+  free(a->buffer);
 #ifdef HAVE_PTHREAD
-    if (a->speech) free(a->speech);
+  if (a->speech)
+    free(a->speech);
 #endif
 #ifdef HAVE_LIBFVAD
-    if (a->fvad) {
-        free(a->fvad_lastresult);
-        fvad_free(a->fvad);
-    }
+  if (a->fvad) {
+    free(a->fvad_lastresult);
+    fvad_free(a->fvad);
+  }
 #endif /* HAVE_LIBFVAD */
 }
 
