@@ -17,46 +17,72 @@
  */
 /*
  * Copyright (c) 1991-2013 Kawahara Lab., Kyoto University
- * Copyright (c) 2001-2005 Shikano Lab., Nara Institute of Science and Technology
- * Copyright (c) 2005-2013 Julius project team, Nagoya Institute of Technology
- * All rights reserved
+ * Copyright (c) 2001-2005 Shikano Lab., Nara Institute of Science and
+ * Technology Copyright (c) 2005-2013 Julius project team, Nagoya Institute of
+ * Technology All rights reserved
  */
 
 #include <julius/juliuslib.h>
 #include <signal.h>
 
-static int speechlen;		///< Total length of recorded sample
-static int fd = -1;		///< File descriptor for output
-static FILE *fp = NULL;		///< File pointer for WAV output
-static int  size;		///< Output file size
+static int speechlen;   ///< Total length of recorded sample
+static int fd = -1;     ///< File descriptor for output
+static FILE *fp = NULL; ///< File pointer for WAV output
+static int size;        ///< Output file size
 static int sfreq;
 
-static char *filename = NULL;	///< Output file name
-static boolean stout = FALSE;	///< True if output to stdout
-static boolean use_raw = FALSE;	///< Output in RAW format if TRUE
+static char *filename = NULL;   ///< Output file name
+static boolean stout = FALSE;   ///< True if output to stdout
+static boolean use_raw = FALSE; ///< Output in RAW format if TRUE
 
 /**
  * <JA>ヘルプを表示して終了する</JA>
  * <EN>Print help and exit</EN>
  */
-static boolean
-opt_help(Jconf *jconf, char *arg[], int argnum)
-{
+static boolean opt_help(Jconf *jconf, char *arg[], int argnum) {
   fprintf(stderr, "adinrec --- record one sentence input to a file\n");
   fprintf(stderr, "Usage: adinrec [options..] filename\n");
-  fprintf(stderr, "    [-input mic|pulseaudio|alsa|oss|esd|...]  input source       (mic)\n");
-  fprintf(stderr, "    [-freq frequency]     sampling frequency in Hz    (%d)\n", jconf->am_root->analysis.para_default.smp_freq);
-  fprintf(stderr, "    [-48]                 48000Hz recording with down sampling (16kHz only)\n");
-  fprintf(stderr, "    [-lv unsignedshort]   silence cut level threshold (%d)\n", jconf->detect.level_thres);
-  fprintf(stderr, "    [-zc zerocrossnum]    silence cut zerocross num   (%d)\n", jconf->detect.zero_cross_num);
-  fprintf(stderr, "    [-headmargin msec]    head margin length          (%d)\n", jconf->detect.head_margin_msec);
-  fprintf(stderr, "    [-tailmargin msec]    tail margin length          (%d)\n", jconf->detect.tail_margin_msec);
-  fprintf(stderr, "    [-chunksize sample]   chunk size for processing   (%d)\n", jconf->detect.chunk_size);
+  fprintf(stderr, "    [-input mic|pulseaudio|alsa|oss|esd|...]  input source  "
+                  "     (mic)\n");
+  fprintf(stderr,
+          "    [-freq frequency]     sampling frequency in Hz    (%d)\n",
+          jconf->am_root->analysis.para_default.smp_freq);
+  fprintf(stderr, "    [-48]                 48000Hz recording with down "
+                  "sampling (16kHz only)\n");
+  fprintf(stderr,
+          "    [-lv unsignedshort]   silence cut level threshold (%d)\n",
+          jconf->detect.level_thres);
+  fprintf(stderr,
+          "    [-zc zerocrossnum]    silence cut zerocross num   (%d)\n",
+          jconf->detect.zero_cross_num);
+  fprintf(stderr,
+          "    [-headmargin msec]    head margin length          (%d)\n",
+          jconf->detect.head_margin_msec);
+  fprintf(stderr,
+          "    [-tailmargin msec]    tail margin length          (%d)\n",
+          jconf->detect.tail_margin_msec);
+  fprintf(stderr,
+          "    [-chunksize sample]   chunk size for processing   (%d)\n",
+          jconf->detect.chunk_size);
 #ifdef HAVE_LIBFVAD
-  fprintf(stderr, "    [-fvad mode]          enable WebRTC VAD (0-3, larger value rejects noises aggressively) (%d)\n", jconf->detect.fvad_mode);
-  fprintf(stderr, "    [-fvad_param i f]     WebRTC VAD parameters (smoothing duration (frames), thres([0-1]))  (%d %.2f)\n", jconf->detect.fvad_smoothnum, jconf->detect.fvad_thres);
-  fprintf(stderr, "    [-agc][-noagc]        enable/disable additional AGC on WebRTC VAD\n");
-  fprintf(stderr, "    [-agc_param p1 ... p7]  AGC parameters   (%d %.2f %.2f %.2f %.2f %.2f %.2f)\n", jconf->detect.agc.overflow_thres , jconf->detect.agc.scale_max, jconf->detect.agc.scale_max_relative_first, jconf->detect.agc.level_factor_first, jconf->detect.agc.scale_up_rate, jconf->detect.agc.scale_down_rate, jconf->detect.agc.scale_down_overflow_rate);
+  fprintf(stderr,
+          "    [-fvad mode]          enable WebRTC VAD (0-3, larger value "
+          "rejects noises aggressively) (%d)\n",
+          jconf->detect.fvad_mode);
+  fprintf(stderr,
+          "    [-fvad_param i f]     WebRTC VAD parameters (smoothing duration "
+          "(frames), thres([0-1]))  (%d %.2f)\n",
+          jconf->detect.fvad_smoothnum, jconf->detect.fvad_thres);
+  fprintf(stderr, "    [-agc][-noagc]        enable/disable additional AGC on "
+                  "WebRTC VAD\n");
+  fprintf(stderr,
+          "    [-agc_param p1 ... p7]  AGC parameters   (%d %.2f %.2f %.2f "
+          "%.2f %.2f %.2f)\n",
+          jconf->detect.agc.overflow_thres, jconf->detect.agc.scale_max,
+          jconf->detect.agc.scale_max_relative_first,
+          jconf->detect.agc.level_factor_first, jconf->detect.agc.scale_up_rate,
+          jconf->detect.agc.scale_down_rate,
+          jconf->detect.agc.scale_down_overflow_rate);
 #endif /* HAVE_LIBFVAD */
   fprintf(stderr, "    [-nostrip]            not strip off zero samples\n");
   fprintf(stderr, "    [-zmean]              remove DC by zero mean\n");
@@ -67,21 +93,18 @@ opt_help(Jconf *jconf, char *arg[], int argnum)
   confout_audio(stderr);
   confout_process(stderr);
   fprintf(stderr, "\n");
-  exit(1);			/* exit here */
+  exit(1); /* exit here */
   return TRUE;
 }
 
-static boolean
-opt_raw(Jconf *jconf, char *arg[], int argnum)
-{
+static boolean opt_raw(Jconf *jconf, char *arg[], int argnum) {
   use_raw = TRUE;
   return TRUE;
 }
-static boolean
-opt_freq(Jconf *jconf, char *arg[], int argnum)
-{
+static boolean opt_freq(Jconf *jconf, char *arg[], int argnum) {
   jconf->amnow->analysis.para.smp_freq = atoi(arg[0]);
-  jconf->amnow->analysis.para.smp_period = freq2period(jconf->amnow->analysis.para.smp_freq);
+  jconf->amnow->analysis.para.smp_period =
+      freq2period(jconf->amnow->analysis.para.smp_freq);
   return TRUE;
 }
 
@@ -106,9 +129,7 @@ opt_freq(Jconf *jconf, char *arg[], int argnum)
  * input will continue in the next call.
  * </EN>
  */
-static int
-adin_callback_file(SP16 *now, int len, Recog *recog)
-{
+static int adin_callback_file(SP16 *now, int len, Recog *recog) {
   int count;
 
   /* erase "<<<please speak>>>" text on tty at trigger up */
@@ -120,23 +141,25 @@ adin_callback_file(SP16 *now, int len, Recog *recog)
   if (use_raw) {
     if (fd == -1) {
       if (stout) {
-	fd = 1;
+        fd = 1;
       } else {
-	if ((fd = open(filename, O_CREAT | O_RDWR
+        if ((fd = open(filename,
+                       O_CREAT | O_RDWR
 #ifdef O_BINARY
-		       | O_BINARY
+                           | O_BINARY
 #endif
-		       , 0644)) == -1) {
-	  perror("adinrec");
-	  return -1;
-	}
+                       ,
+                       0644)) == -1) {
+          perror("adinrec");
+          return -1;
+        }
       }
     }
   } else {
     if (fp == NULL) {
       if ((fp = wrwav_open(filename, sfreq)) == NULL) {
-	perror("adinrec");
-	return -1;
+        perror("adinrec");
+        return -1;
       }
     }
   }
@@ -148,7 +171,9 @@ adin_callback_file(SP16 *now, int len, Recog *recog)
       return -1;
     }
     if (count < len * sizeof(SP16)) {
-      fprintf(stderr, "adinrec: cannot write more %d bytes\ncurrent length = %lu\n", count, speechlen * sizeof(SP16));
+      fprintf(stderr,
+              "adinrec: cannot write more %d bytes\ncurrent length = %lu\n",
+              count, speechlen * sizeof(SP16));
       return -1;
     }
   } else {
@@ -162,41 +187,37 @@ adin_callback_file(SP16 *now, int len, Recog *recog)
 
   /* progress bar in dots */
   fprintf(stderr, ".");
-  return(0);
+  return (0);
 }
 
 /* close file */
-static void
-close_file()
-{
+static void close_file() {
   size = sizeof(SP16) * speechlen;
   if (use_raw) {
     if (fd >= 0) {
       if (close(fd) != 0) {
-	perror("adinrec");
+        perror("adinrec");
       }
     }
   } else {
     if (fp != NULL) {
       if (wrwav_close(fp) == FALSE) {
-	fprintf(stderr, "adinrec: failed to close file\n");
+        fprintf(stderr, "adinrec: failed to close file\n");
       }
     }
   }
-  fprintf(stderr, "\n%d samples (%d bytes, %.2f sec.) recorded\n", speechlen, size, (float)speechlen / (float)sfreq);
+  fprintf(stderr, "\n%d samples (%d bytes, %.2f sec.) recorded\n", speechlen,
+          size, (float)speechlen / (float)sfreq);
 }
 
 /* Interrupt signal handling */
-static void
-interrupt_record(int signum)
-{
+static void interrupt_record(int signum) {
   fprintf(stderr, "[Interrupt]");
   /* close files */
   close_file();
   /* terminate program */
   exit(1);
 }
-
 
 /**
  * <JA>
@@ -216,9 +237,7 @@ interrupt_record(int signum)
  * @return 1 on error, 0 on success.
  * </EN>
  */
-int
-main(int argc, char *argv[])
-{
+int main(int argc, char *argv[]) {
   Recog *recog;
   Jconf *jconf;
 
@@ -239,11 +258,11 @@ main(int argc, char *argv[])
   }
 
   /* regard last arg as filename */
-  if (strmatch(argv[argc-1], "-")) {
+  if (strmatch(argv[argc - 1], "-")) {
     stout = TRUE;
     use_raw = TRUE;
   } else {
-    filename = argv[argc-1];
+    filename = argv[argc - 1];
   }
 
   /* set default as same as "-input mic" */
@@ -252,7 +271,7 @@ main(int argc, char *argv[])
   jconf->input.device = SP_INPUT_DEFAULT;
 
   /* read arguments and set parameters */
-  if (j_config_load_args(jconf, argc-1, argv) == -1) {
+  if (j_config_load_args(jconf, argc - 1, argv) == -1) {
     fprintf(stderr, "Error reading arguments\n");
     return -1;
   }
@@ -264,10 +283,11 @@ main(int argc, char *argv[])
   }
 
   /* finalize config */
-  //if (j_jconf_finalize(jconf) == FALSE) return -1;
+  // if (j_jconf_finalize(jconf) == FALSE) return -1;
 
   /* set Julius default parameters for unspecified acoustic parameters */
-  apply_para(&(jconf->am_root->analysis.para), &(jconf->am_root->analysis.para_default));
+  apply_para(&(jconf->am_root->analysis.para),
+             &(jconf->am_root->analysis.para_default));
 
   /* set some values */
   jconf->input.sfreq = jconf->am_root->analysis.para.smp_freq;
@@ -280,10 +300,10 @@ main(int argc, char *argv[])
   if (!stout) {
     if (access(filename, F_OK) == 0) {
       if (access(filename, W_OK) == 0) {
-	fprintf(stderr, "Warning: overwriting file \"%s\"\n", filename);
+        fprintf(stderr, "Warning: overwriting file \"%s\"\n", filename);
       } else {
-	perror("adinrec");
-	return(1);
+        perror("adinrec");
+        return (1);
       }
     }
   }

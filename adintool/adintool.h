@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 1991-2016 Kawahara Lab., Kyoto University
- * Copyright (c) 2000-2005 Shikano Lab., Nara Institute of Science and Technology
- * Copyright (c) 2005-2016 Julius project team, Nagoya Institute of Technology
- * All rights reserved
+ * Copyright (c) 2000-2005 Shikano Lab., Nara Institute of Science and
+ * Technology Copyright (c) 2005-2016 Julius project team, Nagoya Institute of
+ * Technology All rights reserved
  */
 
 #ifndef __J_ADINTOOL_H__
@@ -27,7 +27,7 @@
 #endif
 
 // definition of speech output selection
-enum{SPOUT_NONE, SPOUT_FILE, SPOUT_STDOUT, SPOUT_ADINNET, SPOUT_VECTORNET};
+enum { SPOUT_NONE, SPOUT_FILE, SPOUT_STDOUT, SPOUT_ADINNET, SPOUT_VECTORNET };
 
 // maximum number of server connection
 #define MAXCONNECTION 10
@@ -52,10 +52,10 @@ enum{SPOUT_NONE, SPOUT_FILE, SPOUT_STDOUT, SPOUT_ADINNET, SPOUT_VECTORNET};
 // audio tick flag: set to indicate that an input segment was triggered down
 #define WAVE_TICK_FLAG_TRIGGER 0x02
 #ifdef HAVE_LIBFVAD
-// audio tick flag: set to indicate that an input segment was detemined as voice by fvad
+// audio tick flag: set to indicate that an input segment was detemined as voice
+// by fvad
 #define WAVE_TICK_FLAG_FVAD_VOICED 0x04
 #endif /* HAVE_LIBFVAD */
-
 
 #ifdef AUTO_ADJUST_THRESHOLD
 // mean / var computing window length in seconds
@@ -69,29 +69,28 @@ enum{SPOUT_NONE, SPOUT_FILE, SPOUT_STDOUT, SPOUT_ADINNET, SPOUT_VECTORNET};
 // the smaller, the more the threshold goes down to capture quiet speech
 #define AUTOTHRES_ADAPT_THRES_2 0.030
 // silence duration length threshold to start moving to lower threshold
-#define AUTOTHRES_DOWN_SEC 2      /* mean/var stable duration */
+#define AUTOTHRES_DOWN_SEC 2 /* mean/var stable duration */
 // ignore the first samples till this seconds
 #define AUTOTHRES_START_IGNORE_SEC 0.5
 // threshold smearing coef.  smaller, slower.
 #define AUTOTHRES_ADAPT_SPEED_COEF 0.25
 #endif
 
-
 // SDL data holder
 typedef struct {
 #ifdef HAVE_PTHREAD
-  pthread_mutex_t mutex;        /* mutex */
+  pthread_mutex_t mutex; /* mutex */
 #endif
-  SDL_Window *window;		/* SDL Window */
-  SDL_Renderer *renderer;	/* SDL Renderer */
-  int window_w;			/* current window screen width */
-  int items;			/* number of ticks to be drawn */
-  SP16 *tickbuf;		/* buffer to get samples of a tick */
-  int ticklen;			/* length of tickbuf */
-  int tickbp;			/* current pointer at tickbuf */
-  float *maxlevel;		/* max levels of ticks */
-  float *minlevel;		/* min levels of ticks */
-  short *flag;			/* flags of ticks */
+  SDL_Window *window;     /* SDL Window */
+  SDL_Renderer *renderer; /* SDL Renderer */
+  int window_w;           /* current window screen width */
+  int items;              /* number of ticks to be drawn */
+  SP16 *tickbuf;          /* buffer to get samples of a tick */
+  int ticklen;            /* length of tickbuf */
+  int tickbp;             /* current pointer at tickbuf */
+  float *maxlevel;        /* max levels of ticks */
+  float *minlevel;        /* min levels of ticks */
+  short *flag;            /* flags of ticks */
 #ifdef AUTO_ADJUST_THRESHOLD
   float *mean;
   float *var;
@@ -103,8 +102,8 @@ typedef struct {
   float vvthres2;
 #endif
   int bp; /* current pointer at maxlevel/minlevel/flag (will circulate) */
-  SDL_Rect *rects;  /* working area for drawing: tick coordinates */
-  short *rectflags; /* working area for drawing: flags */
+  SDL_Rect *rects;     /* working area for drawing: tick coordinates */
+  short *rectflags;    /* working area for drawing: flags */
   short is_valid_flag; /* last input valid flag, used to find trigger up/down */
   int totaltick;
 } SDLDATA;
@@ -115,54 +114,60 @@ typedef struct {
 
   // configurations given via command line or Jconf configuration file
   struct {
-    int speech_output;		/* speech output selection */
-    int sfreq;	 /* sampling frequency, obtained from Julius config */
-    boolean continuous_segment;	/* process only the first segment if FALSE */
-    boolean pause_each;		/* always pause after each input segment and wait resume when TRUE */
-    boolean loose_sync;		/* more loose way of resuming with multiple servers when TRUE */
-    int rewind_msec;		/* rewind samples at re-trigger */
-    
-    char *filename;		/* output file name */
-    int startid;		/* output file path numbering start with this value */
-    boolean use_raw;		/* output file in raw format when TRUE, in wav otherwise */
+    int speech_output; /* speech output selection */
+    int sfreq;         /* sampling frequency, obtained from Julius config */
+    boolean continuous_segment; /* process only the first segment if FALSE */
+    boolean pause_each; /* always pause after each input segment and wait resume
+                           when TRUE */
+    boolean loose_sync; /* more loose way of resuming with multiple servers when
+                           TRUE */
+    int rewind_msec;    /* rewind samples at re-trigger */
 
-    int adinnet_port_in;	/* input adinnet port number */
+    char *filename;  /* output file name */
+    int startid;     /* output file path numbering start with this value */
+    boolean use_raw; /* output file in raw format when TRUE, in wav otherwise */
+
+    int adinnet_port_in;               /* input adinnet port number */
     char *adinnet_serv[MAXCONNECTION]; /* output adinnet server names */
-    int adinnet_port[MAXCONNECTION]; /* output adinnet server port numbers */
-    int adinnet_servnum;	     /* number of output adinnet server names */
-    int adinnet_portnum;	     /* number of output adinnet server port numbers */
+    int adinnet_port[MAXCONNECTION];   /* output adinnet server port numbers */
+    int adinnet_servnum; /* number of output adinnet server names */
+    int adinnet_portnum; /* number of output adinnet server port numbers */
 
-    short vecnet_paramtype;	/* output vector format */
-    int vecnet_veclen;		/* output vector length */
+    short vecnet_paramtype; /* output vector format */
+    int vecnet_veclen;      /* output vector length */
   } conf;
 
   // status
-  boolean on_processing; /* TRUE when processing of triggered samples are ready (connected) */
+  boolean on_processing; /* TRUE when processing of triggered samples are ready
+                            (connected) */
   boolean on_pause;      /* TRUE when pausing (not process input samples) */
-  boolean writing_file;	 /* TRUE when writing to a file */
-  boolean stop_at_next;	 /* TRUE when need to stop at next inpu by server request */
+  boolean writing_file;  /* TRUE when writing to a file */
+  boolean
+      stop_at_next; /* TRUE when need to stop at next inpu by server request */
   boolean process_error;
 
   // counters
   int total_speechlen; /* total number of processed samples since start */
-  int trigger_sample;  /* accumulated number of samples since input start at last trigger up */
-  int unknown_command_counter;	/* Counter to detect broken connection */
-  int resume_count[MAXCONNECTION]; /* Number of incoming resume commands for resume synchronization */
+  int trigger_sample; /* accumulated number of samples since input start at last
+                         trigger up */
+  int unknown_command_counter;     /* Counter to detect broken connection */
+  int resume_count[MAXCONNECTION]; /* Number of incoming resume commands for
+                                      resume synchronization */
 
   // work area
-  Recog *recog;	  /* Julius recognition instance */
-  Jconf *jconf;	  /* Julius configuration instance */
-  int speechlen;     /* number of processed samples in this segment */
-  int fd;	     /* output raw file descriptor for SPOUT_FILE */
-  FILE *fp;	     /* output wav file pointer for SPOUT_FILE */
-  int sid;	     /* current file path numbering value */
-  char *outpath;     /* string buffer to hold current output file path */
-  int sd[MAXCONNECTION];	/* output adinnet socket descriptors */
+  Recog *recog;          /* Julius recognition instance */
+  Jconf *jconf;          /* Julius configuration instance */
+  int speechlen;         /* number of processed samples in this segment */
+  int fd;                /* output raw file descriptor for SPOUT_FILE */
+  FILE *fp;              /* output wav file pointer for SPOUT_FILE */
+  int sid;               /* current file path numbering value */
+  char *outpath;         /* string buffer to hold current output file path */
+  int sd[MAXCONNECTION]; /* output adinnet socket descriptors */
 
 #ifdef USE_SDL
   SDLDATA sdl;
 #endif
-  
+
 } AdinTool;
 
 /* adintool.c */

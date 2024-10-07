@@ -15,7 +15,7 @@
  *
  * このファイルには，音声の入出力に関する雑多な定義が収められています．
  * 一発話あたりの入力長に関する制限などが定義されています．
- * 
+ *
  * 入力ソースに関する定義は adin.h，MFCC 特徴量抽出に関する定義は mfcc.h,
  * 特徴量パラメータについては htk_param.h を参照して下さい．
  * </JA>
@@ -24,13 +24,13 @@
  * @date   Sat Feb 12 11:16:41 2005
  *
  * $Revision: 1.6 $
- * 
+ *
  */
 /*
  * Copyright (c) 1991-2013 Kawahara Lab., Kyoto University
- * Copyright (c) 2000-2005 Shikano Lab., Nara Institute of Science and Technology
- * Copyright (c) 2005-2013 Julius project team, Nagoya Institute of Technology
- * All rights reserved
+ * Copyright (c) 2000-2005 Shikano Lab., Nara Institute of Science and
+ * Technology Copyright (c) 2005-2013 Julius project team, Nagoya Institute of
+ * Technology All rights reserved
  */
 
 /* speech input limitation */
@@ -45,9 +45,9 @@
  * This value defines limitation of word length in one utterance input.
  * If the number of words exceeds this value, Julius produces error.
  * So you have to set large value enough.
- * 
+ *
  */
-#define MAXSEQNUM     150
+#define MAXSEQNUM 150
 
 /**
  * @brief Maximum length of an input in samples
@@ -60,9 +60,9 @@
  * The default value is 320000, which means you can give Julius an input of
  * at most 20 secons in 16kHz sampling.  Setting smaller value saves
  * memory usage.
- * 
+ *
  */
-#define MAXSPEECHLEN  320000
+#define MAXSPEECHLEN 320000
 
 /**
  * @brief Maximum length of input delay in seconds
@@ -74,9 +74,9 @@
  *
  * The default value is 8 seconds.  Setting smaller value saves
  * memory usage but risk of overflow grows on slow machines
- * 
+ *
  */
-#define INPUT_DELAY_SEC  8
+#define INPUT_DELAY_SEC 8
 
 /**
  * @brief Expansion period in frames for output probability cache
@@ -89,23 +89,22 @@
  *
  * This value specifies the re-allocation period in frames.  The probability
  * cache are will be expanded as the input proceeds this frame.
- * 
+ *
  * Smaller value may improve memory efficiency, but Too small value may
  * result in the overhead of memory re-allocation and slow down the
  * recognition.
- * 
+ *
  */
 #define OUTPROB_CACHE_PERIOD 100
-
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 /// Macro to convert smpPeriod (100nsec unit) to frequency (Hz)
-#define period2freq(A)  (10000000.0 / (float)(A))
+#define period2freq(A) (10000000.0 / (float)(A))
 /// Macro to convert sampling frequency (Hz) to smpPeriod (100nsec unit)
-#define freq2period(A)  (10000000.0 / (float)(A))
+#define freq2period(A) (10000000.0 / (float)(A))
 
 /* for anlz/wrsamp.c */
 int wrsamp(int fd, SP16 *buf, int len);

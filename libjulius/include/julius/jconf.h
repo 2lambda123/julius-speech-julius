@@ -1,16 +1,16 @@
 /**
  * @file   jconf.h
- * 
+ *
  * <JA>
  * @brief  Jconf 構造体の定義
  *
  * </JA>
- * 
+ *
  * <EN>
  * @brief  Jconf structure
  *
  * </EN>
- * 
+ *
  * <pre>
  * JCONF
  *   +- JCONF_AM[] (linked list)
@@ -19,63 +19,63 @@
  *   +- JCONF_AM for GMM
  *   +- (engine configurations)
  * </pre>
- * 
+ *
  * @author Akinobu Lee
  * @date   Fri Feb 16 13:42:28 2007
  *
  * $Revision: 1.20 $
- * 
+ *
  */
 /*
  * Copyright (c) 1991-2013 Kawahara Lab., Kyoto University
- * Copyright (c) 2000-2005 Shikano Lab., Nara Institute of Science and Technology
- * Copyright (c) 2005-2013 Julius project team, Nagoya Institute of Technology
- * All rights reserved
+ * Copyright (c) 2000-2005 Shikano Lab., Nara Institute of Science and
+ * Technology Copyright (c) 2005-2013 Julius project team, Nagoya Institute of
+ * Technology All rights reserved
  */
 
 /*
-*/
+ */
 
 #ifndef __J_JCONF_H__
 #define __J_JCONF_H__
 
-#include <sent/stddefs.h>
-#include <sent/hmm.h>
-#include <sent/vocabulary.h>
-#include <sent/ngram2.h>
-#include <sent/dfa.h>
-#include <sent/mfcc.h>
-#include <julius/wchmm.h>
-#include <julius/search.h>
 #include <julius/callback.h>
+#include <julius/search.h>
+#include <julius/wchmm.h>
+#include <sent/dfa.h>
+#include <sent/hmm.h>
+#include <sent/mfcc.h>
+#include <sent/ngram2.h>
+#include <sent/stddefs.h>
+#include <sent/vocabulary.h>
 
 /**
  * Maximum length of module name string
- * 
+ *
  */
 #define JCONF_MODULENAME_MAXLEN 64
 
 /**
  * Default module name if not specified (in case of old jconf)
- * 
+ *
  */
 #define JCONF_MODULENAME_DEFAULT "_default"
 
 /**
  * Configuration parameters (AM)
- * 
+ *
  */
 typedef struct __jconf_am__ {
 
   /**
    * Unique ID
-   * 
+   *
    */
   short id;
 
   /**
    * Unique name
-   * 
+   *
    */
   char name[JCONF_MODULENAME_MAXLEN];
 
@@ -94,8 +94,8 @@ typedef struct __jconf_am__ {
   int gprune_method;
   /**
    * Number of Gaussian to compute per mixture on Gaussian pruning (-tmix)
-     */
-  int mixnum_thres;   
+   */
+  int mixnum_thres;
   /**
    * Logical HMM name of short pause model (-spmodel)
    * Default: "sp"
@@ -108,14 +108,14 @@ typedef struct __jconf_am__ {
   /**
    * GMS: number of mixture PDF to select (-gsnum)
    */
-  int gs_statenum;    
+  int gs_statenum;
 
   /**
    * Calculation method for outprob score of a lcdset on cross-word
-   * triphone (-iwcd1) 
+   * triphone (-iwcd1)
    */
   short iwcdmethod;
-  
+
   /**
    * N-best states to be calculated on IWCD_NBEST (-iwcd1 best N)
    */
@@ -125,24 +125,24 @@ typedef struct __jconf_am__ {
    * Transition penalty of inter-word short pause (-iwsppenalty)
    * for multi-path mode
    */
-  LOGPROB iwsp_penalty; 
+  LOGPROB iwsp_penalty;
 
   /**
    * force multipath mode
-   * 
+   *
    */
   boolean force_multipath;
 
   /**
    * Acoustic Analysis Conditions.  Parameter setting priority is:
    * user-specified > specified HTK Config > model-embedded > Julius default.
-   * 
+   *
    */
   struct {
     /**
      * All MFCC computation parameters, actually used for recognition.
      */
-    Value para;         
+    Value para;
     /**
      * default parameters of Julius
      */
@@ -150,11 +150,11 @@ typedef struct __jconf_am__ {
     /**
      * parameters from binhmm header
      */
-    Value para_hmm;             
+    Value para_hmm;
     /**
      * parameters from HTK Config (-htkconf)
      */
-    Value para_htk;     
+    Value para_htk;
     /**
      * CMN: load initial cepstral mean from file at startup (-cmnload)
      */
@@ -171,7 +171,7 @@ typedef struct __jconf_am__ {
     /**
      * CMN: save cepstral mean to file at end of every recognition (-cmnsave)
      */
-    char *cmnsave_filename;     
+    char *cmnsave_filename;
     /**
      * CMN: MAP weight for initial cepstral mean on (-cmnmapweight)
      */
@@ -183,21 +183,20 @@ typedef struct __jconf_am__ {
 
   } analysis;
 
-
   /**
    * Frontend processing parameter for this AM
-   * 
+   *
    */
   struct {
     /**
      * Alpha coefficient for spectral subtraction
-     * 
+     *
      */
     float ss_alpha;
 
     /**
      * Flooring coefficient for spectral subtraction
-     * 
+     *
      */
     float ss_floor;
 
@@ -227,22 +226,24 @@ typedef struct __jconf_am__ {
    */
   struct {
     boolean enabled;
-    short paramtype;		/* feature type */
-    char *optionstring;		/* feature extraction option string  */
-    int veclen;			/* vector length */
-    int contextlen;		/* context length */
-    int inputnodes;		/* number of input nodes (should match veclen * contextlen) */
-    int outputnodes;		/* number of output nodes (should match HMM state for num and order */
-    int hiddennodes;		/* number of nodes in a hidden layer */
-    int hiddenlayernum;		/* number of hidden layers */
-    char **wfile;		/* W matrix files for hidden layers */
-    char **bfile;		/* b vector files for hidden layers */
-    char *output_wfile;		/* W matrix file for output layer */
-    char *output_bfile;		/* b vector file for output layer */
-    char *priorfile;		/* state prior file */
-    float prior_factor;		/* state prior factor */
-    int batchsize;		/* batch size */
-    int num_threads;		/* number of threads */
+    short paramtype;    /* feature type */
+    char *optionstring; /* feature extraction option string  */
+    int veclen;         /* vector length */
+    int contextlen;     /* context length */
+    int inputnodes;  /* number of input nodes (should match veclen * contextlen)
+                      */
+    int outputnodes; /* number of output nodes (should match HMM state for num
+                        and order */
+    int hiddennodes; /* number of nodes in a hidden layer */
+    int hiddenlayernum; /* number of hidden layers */
+    char **wfile;       /* W matrix files for hidden layers */
+    char **bfile;       /* b vector files for hidden layers */
+    char *output_wfile; /* W matrix file for output layer */
+    char *output_bfile; /* b vector file for output layer */
+    char *priorfile;    /* state prior file */
+    float prior_factor; /* state prior factor */
+    int batchsize;      /* batch size */
+    int num_threads;    /* number of threads */
   } dnn;
 
   /* pointer to next instance */
@@ -252,7 +253,7 @@ typedef struct __jconf_am__ {
 
 /**
  * Name lister for language model configurations
- * 
+ *
  */
 typedef struct __jconf_lm_namelist__ {
   /**
@@ -268,32 +269,32 @@ typedef struct __jconf_lm_namelist__ {
 
 /**
  * Language models (N-gram / DFA), dictionary, and related parameters.
- * 
+ *
  */
 typedef struct __jconf_lm__ {
 
   /**
    * Unique ID
-   * 
+   *
    */
   short id;
 
   /**
    * Unique name
-   * 
+   *
    */
   char name[JCONF_MODULENAME_MAXLEN];
 
   /**
    * Language model type: one of LM_UNDEF, LM_NGRAM, LM_DFA
-   * 
+   *
    */
   int lmtype;
 
   /**
    * Variation type of language model: one of LM_NGRAM, LM_DFA_GRAMMAR,
    * LM_DFA_WORD
-   * 
+   *
    */
   int lmvar;
 
@@ -301,7 +302,7 @@ typedef struct __jconf_lm__ {
    * Word dictionary file (-v)
    */
   char *dictfilename;
-  
+
   /**
    * Silence word to be placed at beginning of speech (-silhead) for N-gram
    */
@@ -310,12 +311,12 @@ typedef struct __jconf_lm__ {
    * Silence word to be placed at end of search (-siltail) for N-gram
    */
   char *tail_silname;
-  
+
   /**
    * Skip error words in dictionary and continue (-forcedict)
    */
   boolean forcedict_flag;
-  
+
   /**
    * N-gram in binary format (-d)
    */
@@ -328,28 +329,28 @@ typedef struct __jconf_lm__ {
    * RL 3-gram in ARPA format (-nrl)
    */
   char *ngram_filename_rl_arpa;
-  
+
   /**
    * DFA grammar file (-dfa, for single use)
    */
   char *dfa_filename;
-  
+
   /**
    * List of grammars to be read at startup (-gram) (-gramlist)
    */
   GRAMLIST *gramlist_root;
-  
+
   /**
    * List of word lists to be read at startup (-w) (-wlist)
    */
   GRAMLIST *wordlist_root;
-  
+
   /**
    * Enable inter-word short pause handling on multi-path version (-iwsp)
    * for multi-path mode
    */
-  boolean enable_iwsp; 
-  
+  boolean enable_iwsp;
+
   /**
    * Enable automatic addition of "short pause word" to the dictionary
    * (-iwspword) for N-gram
@@ -359,7 +360,7 @@ typedef struct __jconf_lm__ {
    * Dictionary entry to be added on "-iwspword" (-iwspentry) for N-gram
    */
   char *iwspentry;
-  
+
 #ifdef SEPARATE_BY_UNIGRAM
   /**
    * Number of best frequency words to be separated (linearized)
@@ -398,39 +399,39 @@ typedef struct __jconf_lm__ {
 
   /**
    * Pointer to next instance
-   * 
+   *
    */
   struct __jconf_lm__ *next;
-  
+
 } JCONF_LM;
 
 /**
  * Search parameters
- * 
+ *
  */
 typedef struct __jconf_search__ {
 
   /**
    * Unique ID
-   * 
+   *
    */
   short id;
 
   /**
    * Unique name
-   * 
+   *
    */
   char name[JCONF_MODULENAME_MAXLEN];
 
   /**
    * Which AM configuration to refer
-   * 
+   *
    */
   JCONF_AM *amconf;
 
   /**
    * Which LM configuration to refer
-   * 
+   *
    */
   JCONF_LM *lmconf;
 
@@ -438,12 +439,12 @@ typedef struct __jconf_search__ {
    * Compute only 1pass (-1pass)
    */
   boolean compute_only_1pass;
-    
+
   /**
    * context handling
    */
   boolean ccd_handling;
-    
+
   /**
    * force context-dependent handling
    */
@@ -451,30 +452,30 @@ typedef struct __jconf_search__ {
 
   /**
    * LM weights
-   * 
+   *
    */
   struct {
     /**
      * N-gram Language model weight (-lmp)
      */
-    LOGPROB lm_weight;  
+    LOGPROB lm_weight;
     /**
      * N-gram Word insertion penalty (-lmp)
      */
-    LOGPROB lm_penalty; 
+    LOGPROB lm_penalty;
     /**
-   * N-gram Language model weight for 2nd pass (-lmp2)
-   */
-    LOGPROB lm_weight2; 
+     * N-gram Language model weight for 2nd pass (-lmp2)
+     */
+    LOGPROB lm_weight2;
     /**
      * N-gram Word insertion penalty for 2nd pass (-lmp2)
      */
-    LOGPROB lm_penalty2;        
+    LOGPROB lm_penalty2;
     /**
      * N-gram Additional insertion penalty for transparent words (-transp)
      */
     LOGPROB lm_penalty_trans;
-    
+
     /**
      * Word insertion penalty for DFA grammar on 1st pass (-penalty1)
      */
@@ -483,21 +484,21 @@ typedef struct __jconf_search__ {
      * Word insertion penalty for DFA grammar on 2nd pass (-penalty2)
      */
     LOGPROB penalty2;
-    
+
     /**
      * INTERNAL: TRUE if -lmp2 specified
      */
     boolean lmp2_specified;
-    
+
     /**
      * INTERNAL: TRUE if -lmp specified
      */
     boolean lmp_specified;
   } lmp;
-    
+
   /**
    * First pass parameters
-   * 
+   *
    */
   struct {
     /**
@@ -515,7 +516,7 @@ typedef struct __jconf_search__ {
      */
 #endif
     LOGPROB score_pruning_width;
-    
+
 #if defined(WPAIR) && defined(WPAIR_KEEP_NLIMIT)
     /**
      * Keeps only N token on word-pair approximation (-nlimit)
@@ -540,30 +541,29 @@ typedef struct __jconf_search__ {
     /**
      * (EXPERIMENTAL) score threshold between maximum node score and
      * maximum word end score for early word determination
-     * 
+     *
      */
     LOGPROB determine_score_thres;
 
     /**
      * (EXPERIMENTAL) frame duration threshold for early word determination
-     * 
+     *
      */
     int determine_duration_thres;
 
 #endif /* DETERMINE */
 
-
   } pass1;
 
   /**
    * Second pass parameters
-   * 
+   *
    */
   struct {
     /**
      * Search until N-best sentences are found (-n). Also see "-output".
      */
-    int nbest;                
+    int nbest;
     /**
      * Word beam width of 2nd pass. -1 means no beaming (-b2)
      */
@@ -587,36 +587,36 @@ typedef struct __jconf_search__ {
      * on 2nd pass (-lookuprange)
      */
     int lookup_range;
-    
+
     /**
      * Limit expansion words for trellis words on neighbor frames
      * at 2nd pass of DFA for speedup (-looktrellis)
      */
     boolean looktrellis_flag;
-    
+
   } pass2;
 
   /**
    * Word graph output
-   * 
+   *
    */
   struct {
 
     /**
      * GraphOut: if enabled, graph search is enabled.
-     * 
+     *
      */
     boolean enabled;
 
     /**
      * GraphOut: if enabled, output word graph
-     * 
+     *
      */
     boolean lattice;
 
     /**
      * GraphOut: if enabled, generate confusion network
-     * 
+     *
      */
     boolean confnet;
 
@@ -627,7 +627,7 @@ typedef struct __jconf_search__ {
      */
     int graph_merge_neighbor_range;
 
-#ifdef   GRAPHOUT_DEPTHCUT
+#ifdef GRAPHOUT_DEPTHCUT
     /**
      * GraphOut: density threshold to cut word graph at post-processing.
      * (-graphcut)  Setting larger value is safe for all condition.
@@ -635,7 +635,7 @@ typedef struct __jconf_search__ {
     int graphout_cut_depth;
 #endif
 
-#ifdef   GRAPHOUT_LIMIT_BOUNDARY_LOOP
+#ifdef GRAPHOUT_LIMIT_BOUNDARY_LOOP
     /**
      * GraphOut: limitation of iteration loop for word boundary adjustment
      * (-graphboundloop)
@@ -653,16 +653,16 @@ typedef struct __jconf_search__ {
 #endif
 
   } graph;
-  
+
   /**
    * Successive decoding (--enable-sp-segment)
-   * 
+   *
    */
   struct {
 
     /**
      * TRUE if short-pause segmentation enabled for this instance
-     * 
+     *
      */
     boolean enabled;
 
@@ -673,7 +673,7 @@ typedef struct __jconf_search__ {
 
     /**
      * name string of pause model
-     * 
+     *
      */
     char *pausemodelname;
 
@@ -681,24 +681,23 @@ typedef struct __jconf_search__ {
     /**
      * Backstep margin when speech trigger detected by NAIST short-pause
      * detection system
-     * 
+     *
      */
     int sp_margin;
 
     /**
      * Delay frame of speech trigger detection in NAIST short-pause
      * detection system
-     * 
+     *
      */
     int sp_delay;
 #endif
 
   } successive;
 
-
   /**
    * Annotation to the output
-   * 
+   *
    */
   struct {
 
@@ -708,7 +707,7 @@ typedef struct __jconf_search__ {
      */
     LOGPROB cm_alpha;
 
-#ifdef   CM_MULTIPLE_ALPHA
+#ifdef CM_MULTIPLE_ALPHA
     /**
      * Begin value of alpha
      */
@@ -727,14 +726,14 @@ typedef struct __jconf_search__ {
     LOGPROB cm_alpha_step;
 #endif
 
-#ifdef   CM_SEARCH_LIMIT
+#ifdef CM_SEARCH_LIMIT
     /**
      * Cut-off threshold for generated hypo. for confidence decoding (-cmthres)
      */
     LOGPROB cm_cut_thres;
 #endif
 
-#ifdef   CM_SEARCH_LIMIT_POPO
+#ifdef CM_SEARCH_LIMIT_POPO
     /**
      * Cut-off threshold for popped hypo. for confidence decoding (-cmthres2)
      */
@@ -742,7 +741,6 @@ typedef struct __jconf_search__ {
 #endif
 
 #endif /* CONFIDENCE_MEASURE */
-
 
     /**
      * Forced alignment: per word (-walign)
@@ -761,7 +759,7 @@ typedef struct __jconf_search__ {
 
   /**
    * Output configurations
-   * 
+   *
    */
   struct {
     /**
@@ -791,7 +789,7 @@ typedef struct __jconf_search__ {
 
   /**
    * Misc. switches
-   * 
+   *
    */
   struct {
     /**
@@ -809,17 +807,17 @@ typedef struct __jconf_search__ {
     /**
      * should be set to TRUE at startup when this process should start
      * with inactive status
-     * 
+     *
      */
     boolean start_inactive;
     /**
      * In case the 2nd pass search fails, this option specifies Julius
      * to use the result of the previous 1st pass as final result.
      * When this is TRUE, no RECOGFAIL occur.
-     * 
+     *
      */
     boolean fallback_pass1_flag;
-    
+
   } sw;
 
 #ifdef USE_MBR
@@ -847,7 +845,7 @@ typedef struct __jconf_search__ {
 
 /**
  * Configuration parameters (global)
- * 
+ *
  */
 typedef struct __Jconf__ {
 
@@ -858,46 +856,46 @@ typedef struct __Jconf__ {
 
     /**
      * Input source type. (waveform / mfc)
-     * 
+     *
      */
     int type;
 
     /**
      * Input source.
-     * 
+     *
      */
     int speech_input;
 
     /**
      * Input device.
-     * 
+     *
      */
     int device;
 
     /**
      * id of the selected plug-in if using plugin
-     * 
+     *
      */
     int plugin_source;
 
     /**
      * Sampling frequency
-     * 
+     *
      */
     int sfreq;
     /**
      * Sampling period in 100ns units
-     * 
+     *
      */
     int period;
     /**
      * Window size in samples, similar to WINDOWSIZE in HTK (unit is different)
-     * 
+     *
      */
     int framesize;
     /**
      * Frame shift length in samples
-     * 
+     *
      */
     int frameshift;
 
@@ -906,7 +904,7 @@ typedef struct __Jconf__ {
      */
     boolean use_ds48to16;
     /**
-     * List of input files for rawfile / mfcfile input (-filelist) 
+     * List of input files for rawfile / mfcfile input (-filelist)
      */
     char *inputlist_filename;
     /**
@@ -929,7 +927,7 @@ typedef struct __Jconf__ {
 
   /**
    * Configurations for Voice activity detection
-   * 
+   *
    */
   struct {
     /**
@@ -956,13 +954,13 @@ typedef struct __Jconf__ {
     /**
      * Chunk size in samples, i.e. processing unit for audio input
      * detection.  Segmentation will be done by this unit.
-     * 
+     *
      */
     int chunk_size;
 #ifdef GMM_VAD
     /**
      * (GMM_VAD) Backstep margin when speech trigger is detected.
-     * 
+     *
      */
     int gmm_margin;
     /**
@@ -1008,32 +1006,35 @@ typedef struct __Jconf__ {
     /**
      * (LIBFVAD) speech likelihood threshold value to finally detect
      * speech trigger.  Value should be between 0.0 and 1.0.  Typical
-     * value is 0.5. 
+     * value is 0.5.
      */
     float fvad_thres;
 
     /**
-     * (LIBFVAD) switch AGC 
+     * (LIBFVAD) switch AGC
      */
     boolean auto_gain_control_flag;
 
     struct {
       int overflow_thres;             ///< signal overflow threshold
       float scale_max;                ///< maximum allowed scale (absolute)
-      float scale_max_relative_first; ///< maximum allowed scale (relative to first-utterance scale)
-      float level_factor_first;       ///< target level threshold factor for first-utterance scaling
+      float scale_max_relative_first; ///< maximum allowed scale (relative to
+                                      ///< first-utterance scale)
+      float level_factor_first;       ///< target level threshold factor for
+                                      ///< first-utterance scaling
       float scale_up_rate;            ///< rate when moving scale up
       float scale_down_rate;          ///< rate when moving scale down
-      float scale_down_overflow_rate; ///< rate when moving scale down by overflow
+      float
+          scale_down_overflow_rate; ///< rate when moving scale down by overflow
     } agc;
 
 #endif /* HAVE_LIBFVAD */
-    
+
   } detect;
 
   /**
    * Pre-processing parameters before frontends
-   * 
+   *
    */
   struct {
 
@@ -1056,7 +1057,7 @@ typedef struct __Jconf__ {
 
   /**
    * Models and parameters for input rejection
-   * 
+   *
    */
   struct {
     /**
@@ -1082,7 +1083,7 @@ typedef struct __Jconf__ {
 #ifdef POWER_REJECT
     /**
      * Rejection power threshold
-     * 
+     *
      */
     float powerthres;
 #endif
@@ -1090,31 +1091,31 @@ typedef struct __Jconf__ {
 
   /**
    * decoding parameters to control recognition process (global)
-   * 
+   *
    */
   struct {
     /**
      * INTERNAL: do on-the-fly decoding if TRUE (value depends on
      * device default and forced_realtime.
      */
-    boolean realtime_flag;    
-    
+    boolean realtime_flag;
+
     /**
      * INTERNAL: TRUE if either of "-realtime" or "-norealtime" is
      * explicitly specified by user.  When TRUE, the user-specified value
      * in forced_realtime will be applied to realtime_flag.
      */
     boolean force_realtime_flag;
-    
+
     /**
      * Force on-the-fly decoding on 1st pass with audio input and
      * MAP-CMN (-realtime / -norealtime)
      */
     boolean forced_realtime;
-    
+
     /**
      * TRUE if a kind of speech segmentation is enabled
-     * 
+     *
      */
     boolean segment;
 
@@ -1123,55 +1124,55 @@ typedef struct __Jconf__ {
   /**
    * Configurations for acoustic models (HMM, HMMList) and am-specific
    * parameters
-   * 
+   *
    */
   JCONF_AM *am_root;
 
   /**
    * Language models (N-gram / DFA), dictionary, and related parameters.
-   * 
+   *
    */
   JCONF_LM *lm_root;
 
   /**
    * Search parameters (LM/AM independent), annotation,
    * and output parameters
-   * 
+   *
    */
   JCONF_SEARCH *search_root;
 
   /**
    * Current JCONF_AM for reading options
-   * 
+   *
    */
   JCONF_LM *lmnow;
   /**
    * Current JCONF_AM for reading options
-   * 
+   *
    */
   JCONF_AM *amnow;
   /**
    * Current JCONF_AM for reading options
-   * 
+   *
    */
   JCONF_SEARCH *searchnow;
 
   /**
    * Config parameters for GMM computation.
    * (only gmmconf->analysis.* is used)
-   * 
+   *
    */
   JCONF_AM *gmm;
 
   /**
    * Current option declaration mode while loading options
-   * 
+   *
    */
   short optsection;
 
   /**
    * Whether option sectioning ristriction should be applied or not
-   * 
+   *
    */
   boolean optsectioning;
 
@@ -1345,4 +1346,3 @@ verbose_flag -> (remain in global.h)
 debug2_flag -> (remain in global.h)
 
 */
- 
