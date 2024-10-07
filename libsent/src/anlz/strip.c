@@ -12,7 +12,7 @@
  * @date   Tue Feb 15 00:30:38 2005
  *
  * $Revision: 1.6 $
- * 
+ *
  */
 /*
  * Copyright (c) 1991-2013 Kawahara Lab., Kyoto University
@@ -32,71 +32,71 @@
 /// log switch
 static boolean strip_zero_warning = TRUE;
 
-/** 
+/**
  * Switch strip zero warning message
- * 
+ *
  * @param flag [in] flag
- * 
+ *
  */
 void
 set_strip_zero_warning(boolean flag)
 {
-  strip_zero_warning = flag;
+    strip_zero_warning = flag;
 }
 
-/** 
+/**
  * Strip zero samples from speech data.
- * 
+ *
  * @param a [I/O] speech data
  * @param len [in] length of above
- * 
+ *
  * @return new length after stripping.
  */
 int
 strip_zero(SP16 a[], int len)
 {
-  int src,dst;
-  int bgn,mode,j;
+    int src,dst;
+    int bgn,mode,j;
 
-  dst = 0;
-  bgn = 0;
-  mode = 0;
+    dst = 0;
+    bgn = 0;
+    mode = 0;
 
-  for (src = 0; src < len; src++) {
-    if (IS_INVALID_SAMPLE(a[src])) {
-      if (mode == 0) {          /* first time */
-        bgn = src;
-        mode = 1;
-      }
-      /* skip */
-    } else {
-      if (mode == 1) {
+    for (src = 0; src < len; src++) {
+        if (IS_INVALID_SAMPLE(a[src])) {
+            if (mode == 0) {          /* first time */
+                bgn = src;
+                mode = 1;
+            }
+            /* skip */
+        } else {
+            if (mode == 1) {
+                mode = 0;
+                if ((src - bgn) < WINDOWLEN) {
+                    for(j=bgn; j<src; j++) {
+                        a[dst++] = a[j];
+                    }
+                } else {
+                    /* deleted (leave uncopied) */
+                    if (strip_zero_warning) jlog("Warning: strip: sample %d-%d has zero value, stripped\n", bgn, src-1);
+                }
+            }
+            a[dst++] = a[src];
+        }
+    }
+    /* end process */
+    if (mode == 1) {
         mode = 0;
         if ((src - bgn) < WINDOWLEN) {
-          for(j=bgn;j<src;j++) {
-            a[dst++] = a[j];
-	  }
+            /* restore */
+            for(j=bgn; j<src; j++) {
+                a[dst++] = a[j];
+            }
         } else {
-          /* deleted (leave uncopied) */
-	  if (strip_zero_warning) jlog("Warning: strip: sample %d-%d has zero value, stripped\n", bgn, src-1);
+            /* deleted (leave uncopied) */
+            if (strip_zero_warning) jlog("Warning: strip: sample %d-%d is invalid, stripped\n", bgn, src-1);
         }
-      }
-      a[dst++] = a[src];
     }
-  }
-  /* end process */
-  if (mode == 1) {
-    mode = 0;
-    if ((src - bgn) < WINDOWLEN) {
-      /* restore */
-      for(j=bgn;j<src;j++) {
-        a[dst++] = a[j];
-      }
-    } else {
-      /* deleted (leave uncopied) */
-      if (strip_zero_warning) jlog("Warning: strip: sample %d-%d is invalid, stripped\n", bgn, src-1);
-    }
-  }
-  
-  return(dst);
+
+    return(dst);
 }

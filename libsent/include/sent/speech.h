@@ -15,7 +15,7 @@
  *
  * このファイルには，音声の入出力に関する雑多な定義が収められています．
  * 一発話あたりの入力長に関する制限などが定義されています．
- * 
+ *
  * 入力ソースに関する定義は adin.h，MFCC 特徴量抽出に関する定義は mfcc.h,
  * 特徴量パラメータについては htk_param.h を参照して下さい．
  * </JA>
@@ -24,7 +24,7 @@
  * @date   Sat Feb 12 11:16:41 2005
  *
  * $Revision: 1.6 $
- * 
+ *
  */
 /*
  * Copyright (c) 1991-2013 Kawahara Lab., Kyoto University
@@ -45,7 +45,7 @@
  * This value defines limitation of word length in one utterance input.
  * If the number of words exceeds this value, Julius produces error.
  * So you have to set large value enough.
- * 
+ *
  */
 #define MAXSEQNUM     150
 
@@ -60,7 +60,7 @@
  * The default value is 320000, which means you can give Julius an input of
  * at most 20 secons in 16kHz sampling.  Setting smaller value saves
  * memory usage.
- * 
+ *
  */
 #define MAXSPEECHLEN  320000
 
@@ -74,7 +74,7 @@
  *
  * The default value is 8 seconds.  Setting smaller value saves
  * memory usage but risk of overflow grows on slow machines
- * 
+ *
  */
 #define INPUT_DELAY_SEC  8
 
@@ -89,11 +89,11 @@
  *
  * This value specifies the re-allocation period in frames.  The probability
  * cache are will be expanded as the input proceeds this frame.
- * 
+ *
  * Smaller value may improve memory efficiency, but Too small value may
  * result in the overhead of memory re-allocation and slow down the
  * recognition.
- * 
+ *
  */
 #define OUTPROB_CACHE_PERIOD 100
 
